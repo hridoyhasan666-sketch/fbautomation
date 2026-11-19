@@ -87,38 +87,51 @@ class Drafter:
         return prompt
 
     def generate_candidates(self, seed_card: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Generates 3 candidates via Gemini API."""
+        """Generates 3 candidates via Gemini API with automatic fallback."""
         prompt = self.build_draft_prompt(seed_card)
         
         if not self.api_key:
             print("[Drafter] No GEMINI_API_KEY found, generating fallback candidate.")
             return self._generate_fallback(seed_card)
 
-        try:
-            from google import genai
-            from google.genai import types
-            
-            client = genai.Client(api_key=self.api_key)
-            response = client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.7
+        from google import genai
+        from google.genai import types
+        
+        models_to_try = [
+            self.model_name,
+            CONFIG.get("models", {}).get("fallback", "gemini-3.1-flash-lite"),
+            "gemini-3.5-flash",
+            "gemini-3.7-flash"
+        ]
+        
+        client = genai.Client(api_key=self.api_key)
+        
+        for m in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=m,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.7
+                    )
                 )
-            )
-            
-            parsed = json.loads(response.text)
-            candidates = parsed.get("candidates", [])
-            for c in candidates:
-                if "candidate_id" not in c:
-                    c["candidate_id"] = f"c-{uuid.uuid4().hex[:6]}"
-                c["format"] = seed_card["format"]
-                c["pillar"] = seed_card["pillar"]
-            return candidates
-        except Exception as e:
-            print(f"[Drafter] API call error: {e}. Falling back to deterministic draft.")
-            return self._generate_fallback(seed_card)
+                
+                parsed = json.loads(response.text)
+                candidates = parsed.get("candidates", [])
+                for c in candidates:
+                    if "candidate_id" not in c:
+                        c["candidate_id"] = f"c-{uuid.uuid4().hex[:6]}"
+                    c["format"] = seed_card["format"]
+                    c["pillar"] = seed_card["pillar"]
+                if candidates:
+                    print(f"[Drafter] Successfully generated candidates using {m}.")
+                    return candidates
+            except Exception as e:
+                print(f"[Drafter] Model {m} error: {e}. Trying next model...")
+
+        print("[Drafter] All models failed. Falling back to deterministic draft.")
+        return self._generate_fallback(seed_card)
 
     def _generate_fallback(self, seed_card: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Provides a valid fallback candidate when API is unavailable."""

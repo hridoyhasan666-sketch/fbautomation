@@ -42,38 +42,46 @@ class Judge:
         prompt = template.replace("{{golden_examples}}", golden_str)
         prompt = prompt.replace("{{candidates_json}}", json.dumps(candidates, indent=2))
 
-        try:
-            from google import genai
-            from google.genai import types
-            
-            client = genai.Client(api_key=self.api_key)
-            response = client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.2
+        models_to_try = [
+            self.model_name,
+            CONFIG.get("models", {}).get("fallback", "gemini-3.1-flash-lite"),
+            "gemini-3.5-flash"
+        ]
+        
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=self.api_key)
+
+        for m in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=m,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.2
+                    )
                 )
-            )
 
-            result = json.loads(response.text)
-            winner_id = result.get("winning_candidate_id")
-            winning_hook = result.get("winning_hook", "")
-            
-            # Find candidate
-            winner = next((c for c in candidates if str(c.get("candidate_id")) == str(winner_id)), candidates[0])
-            score = result.get("confidence_score", 8.0)
-            
-            if not result.get("pass_threshold_met", True) or score < 7.0:
-                print(f"[Judge] Top candidate failed quality threshold (Score: {score})")
-                return None, "", score
+                result = json.loads(response.text)
+                winner_id = result.get("winning_candidate_id")
+                winning_hook = result.get("winning_hook", "")
+                
+                # Find candidate
+                winner = next((c for c in candidates if str(c.get("candidate_id")) == str(winner_id)), candidates[0])
+                score = result.get("confidence_score", 8.0)
+                
+                if not result.get("pass_threshold_met", True) or score < 7.0:
+                    print(f"[Judge] Top candidate failed quality threshold (Score: {score})")
+                    return None, "", score
 
-            return winner, winning_hook, score
-        except Exception as e:
-            print(f"[Judge] Tournament error: {e}. Defaulting to first candidate.")
-            cand = candidates[0]
-            hook = cand["hooks"][0] if cand.get("hooks") else "Old news, modern life."
-            return cand, hook, 7.5
+                return winner, winning_hook, score
+            except Exception as e:
+                print(f"[Judge] Model {m} tournament error: {e}. Trying next...")
+
+        cand = candidates[0]
+        hook = cand["hooks"][0] if cand.get("hooks") else "Old news, modern life."
+        return cand, hook, 7.5
 
     def polish_post(self, winning_candidate: Dict[str, Any], chosen_hook: str, seed_card: Dict[str, Any]) -> Dict[str, Any]:
         """Runs Section 5 Polish & Relevance Check."""
