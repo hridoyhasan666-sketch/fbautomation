@@ -1,0 +1,123 @@
+[
+  {
+    "seed_id": "ca-1903-oh-0142",
+    "source": "Chronicling America (The Evening World, 1903)",
+    "source_url": "https://www.loc.gov/item/sn83030193/1903-06-14/ed-1/seq-3/",
+    "page_image_url": "https://tile.loc.gov/storage-services/service/ndnp/dlc/scr_19030614_1/seq-3.jpg",
+    "date": "1903-06-14",
+    "place": "Cleveland, Ohio",
+    "ocr_text": "Arthur M. Pendleton, a clerk employed in an insurance brokerage on Euclid Avenue, was brought before Magistrate Higgins this morning charged with unlawfully pawning an overcoat belonging to his employer. When interrogated Pendleton confessed that he had pawned the heavy winter coat for four dollars at Goldsteins pawnshop on Water street. When asked by the magistrate why he had committed the offense Pendleton replied through tears that he had desired to purchase an engagement ring for his sweetheart Miss Vance before her family departed for the lakeside summer cottage. The magistrate ordered Pendleton to make full restitution within thirty days.",
+    "format": "true_retelling",
+    "pillar": "money",
+    "facts": [
+      "A clerk pawned a winter overcoat in the middle of June for four dollars",
+      "He needed the four dollars to buy an engagement ring for his fiancée",
+      "The magistrate ordered restitution within thirty days"
+    ],
+    "human_need": "The desperate pressure to look financially secure to impress someone you love",
+    "modern_mirror": "Taking out high-interest Buy-Now-Pay-Later loans to fund holiday gifts and engagement trips",
+    "safety_flags": []
+  },
+  {
+    "seed_id": "ca-1904-nb-0089",
+    "source": "Chronicling America (The Omaha Daily Bee, 1904)",
+    "source_url": "https://www.loc.gov/item/sn99021999/1904-10-22/ed-1/seq-5/",
+    "page_image_url": "https://tile.loc.gov/storage-services/service/ndnp/nbhi/scr_19041022_1/seq-5.jpg",
+    "date": "1904-10-22",
+    "place": "Omaha, Nebraska",
+    "ocr_text": "GREAT FALL SALE AT BRANDEIS SONS. Men's heavy calfskin work boots with double oak soles, warranted water proof, special this week only at one dollar and ninety-five cents per pair. Genuine wool blankets full size eighty-five cents each. Best creamery butter eighteen cents per pound. Fresh eggs twelve cents per dozen.",
+    "format": "price",
+    "pillar": "money",
+    "facts": [
+      "Heavy calfskin work boots were on sale for $1.95 a pair",
+      "Full size wool blankets cost 85 cents each",
+      "Butter was 18 cents per pound, fresh eggs 12 cents per dozen"
+    ],
+    "price_data": {
+      "item": "calfskin work boots",
+      "price_cents": 195,
+      "unit": "pair",
+      "year": 1904
+    },
+    "human_need": "Balancing essential survival clothing against the weekly paycheck",
+    "modern_mirror": "Comparing budget work gear at modern superstores against real hourly wages",
+    "safety_flags": []
+  },
+  {
+    "seed_id": "ca-1899-sf-0311",
+    "source": "Chronicling America (The San Francisco Call, 1899)",
+    "source_url": "https://www.loc.gov/item/sn85066387/1899-04-16/ed-1/seq-12/",
+    "page_image_url": "https://tile.loc.gov/storage-services/service/ndnp/cur_18990416_1/seq-12.jpg",
+    "date": "1899-04-16",
+    "place": "San Francisco, California",
+    "ocr_text": "DR. RADWAYS CELEBRATED RENOVATING RESOLVENT. Purely vegetable remedy for all impure conditions of the blood, chronic fatigue, brain exhaustion, and nervous prostration. Instant relief for overworked businessmen and nervous ladies. Restores youth, vitality, and digestive peace in forty-eight hours or money refunded by all druggists.",
+    "format": "old_ad",
+    "pillar": "same_human",
+    "facts": [
+      "A vegetable concoction marketed to cure 'brain exhaustion' and 'chronic fatigue'",
+      "Sold specifically to overworked businessmen and nervous ladies",
+      "Promised complete restoration of vitality in forty-eight hours"
+    ],
+    "ad_crop_clues": "Column 4 bottom half, large ornate header with bottle engraving",
+    "human_need": "The universal longing for an effortless, instant fix for chronic burnout and brain fog",
+    "modern_mirror": "Nootropic supplements, adaptogen mushroom drinks, and biohacking elixirs sold on Instagram",
+    "safety_flags": []
+  },
+  {
+    "seed_id": "ca-1905-dc-0512",
+    "source": "Chronicling America (The Evening Star, 1905)",
+    "source_url": "https://www.loc.gov/item/sn83045462/1905-09-03/ed-1/seq-18/",
+    "page_image_url": "https://tile.loc.gov/storage-services/service/ndnp/dcu_19050903_1/seq-18.jpg",
+    "date": "1905-09-03",
+    "place": "Washington, D.C.",
+    "ocr_text": "HEART TO HEART TALKS WITH AUNT MARGARET. Anxious Reader writes: I have received three long letters during the past fortnight from a gentleman who sat beside me at a lawn fete in June, though he has not yet paid a formal visit to my parents. Should I reply to his third letter or remain silent? Answer: You must under no circumstances reply. A gentleman who values your good name will knock upon your father's parlor door before filling your postbox with idle flatteries.",
+    "format": "advice",
+    "pillar": "love_family",
+    "facts": [
+      "A young woman asked Aunt Margaret if she should reply to three letters from a man she met at a garden party",
+      "The man had not yet visited her parents formally",
+      "Aunt Margaret advised total silence until he knocked on her father's parlor door"
+    ],
+    "human_need": "The anxiety of unreciprocated or ambiguous romantic signals and boundaries",
+    "modern_mirror": "Debating whether to double-text someone who hasn't committed or is sliding into DMs without asking you on a real date",
+    "safety_flags": []
+  },
+  {
+    "seed_id": "ca-1902-ny-0419",
+    "source": "Chronicling America (The Sun, New York, 1902)",
+    "source_url": "https://www.loc.gov/item/sn83030272/1902-05-11/ed-1/seq-7/",
+    "page_image_url": "https://tile.loc.gov/storage-services/service/ndnp/nn_19020511_1/seq-7.jpg",
+    "date": "1902-05-11",
+    "place": "New York, NY",
+    "ocr_text": "The board of aldermen yesterday took up the contentious ordinance regarding the speed of electric horseless carriages upon the public avenues. Several members complained that these machines travel at upwards of twelve miles an hour, terrifying delivery horses and scattering bicycle riders. A resolution was proposed to compel every operator to carry a brass bell and sound it continuously when approaching street crossings.",
+    "format": "guess_year",
+    "pillar": "strange_true",
+    "facts": [
+      "City officials debated limiting horseless carriages to under 12 mph",
+      "Carriages terrified delivery horses and scattered bicycle riders",
+      "A proposed law required drivers to ring a brass bell continuously at every crossing"
+    ],
+    "human_need": "Society struggling to cope with disruptive new technology replacing familiar infrastructure",
+    "modern_mirror": "Cities wrestling with electric scooters on sidewalks and self-driving robotaxis blocking lanes",
+    "safety_flags": []
+  },
+  {
+    "seed_id": "ca-1898-ma-0211",
+    "source": "Chronicling America (Boston Evening Transcript, 1898)",
+    "source_url": "https://www.loc.gov/item/sn84022409/1898-11-20/ed-1/seq-4/",
+    "page_image_url": "https://tile.loc.gov/storage-services/service/ndnp/mbu_18981120_1/seq-4.jpg",
+    "date": "1898-11-20",
+    "place": "Boston, Massachusetts",
+    "ocr_text": "A packet of letters tied with black ribbon was discovered in the wall of an old house on Pinckney street during renovations. The letters were dated from the harsh winter of 1862 and written by a young ship chandler to his sister in Maine, describing the quiet dread of waiting for the weekly casualty lists from Virginia.",
+    "format": "story_sunday",
+    "pillar": "love_family",
+    "facts": [
+      "Letters tied in black ribbon hidden inside a lath-and-plaster wall",
+      "Written in winter 1862 during war",
+      "Waiting for casualty lists published once a week"
+    ],
+    "human_need": "The agony of distant silence and waiting for news in times of crisis",
+    "modern_mirror": "Staring at the 'read receipt' or waiting for an emergency text while life carries on",
+    "safety_flags": []
+  }
+]

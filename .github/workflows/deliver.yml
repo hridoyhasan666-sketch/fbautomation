@@ -1,0 +1,30 @@
+name: Daily Morning Delivery to Telegram (Daily 03:00 UTC)
+
+on:
+  schedule:
+    # Runs Daily at 03:00 UTC (9:00 AM Dhaka)
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  deliver-posts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Send Daily Posts to Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+        run: python main.py deliver

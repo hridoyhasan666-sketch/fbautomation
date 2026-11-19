@@ -1,0 +1,107 @@
+# Archive Micro-Story Facebook Page Configuration
+
+models:
+  draft: "gemini-2.5-flash"
+  judge: "gemini-2.5-pro"
+  image: "imagen-3.0-generate-002"
+
+meta:
+  graph_api_version: "v21.0"
+  min_interval_hours: 2.5
+  daily_posting_windows_utc:
+    - { start: 12, end: 14 }
+    - { start: 16, end: 18 }
+    - { start: 20, end: 22 }
+
+harvest:
+  loc_api_url: "https://www.loc.gov/collections/chronicling-america/"
+  max_year: 1930
+  rate_limit_delay_seconds: 2.5
+  stock_alert_threshold: 10
+  target_stock_per_format: 15
+
+pillars:
+  money:
+    persona: "anthropologist"
+    keywords: ["pawn", "rent due", "debt", "wages", "swindle", "bargain sale", "store prices"]
+  love_family:
+    persona: "time_traveler"
+    keywords: ["lonely", "matrimonial", "breach of promise", "lost letter", "elope", "courtship"]
+  strange_true:
+    persona: "observer"
+    keywords: ["fined for", "mystery", "strange", "umbrella", "queer case", "curious dispute"]
+  same_human:
+    persona: "anthropologist"
+    keywords: ["exhaustion", "worry", "fashionable", "luxuries", "complaint", "modern habit"]
+
+formats:
+  true_retelling:
+    initial_weight: 0.30
+    min_weight: 0.05
+    max_weight: 0.40
+    min_words: 120
+    max_words: 260
+    citation_gate_required: true
+    keywords: ["clerk", "arrested", "dispute", "incident", "court", "swindle"]
+  price:
+    initial_weight: 0.15
+    min_weight: 0.05
+    max_weight: 0.40
+    min_words: 40
+    max_words: 130
+    citation_gate_required: true
+    keywords: ["cents per", "price", "sale", "bargain", "shoes for", "beef per pound"]
+  old_ad:
+    initial_weight: 0.15
+    min_weight: 0.05
+    max_weight: 0.40
+    min_words: 40
+    max_words: 100
+    citation_gate_required: false
+    keywords: ["advertisement", "guaranteed cure", "new invention", "wanted", "patented"]
+  advice:
+    initial_weight: 0.15
+    min_weight: 0.05
+    max_weight: 0.40
+    min_words: 90
+    max_words: 190
+    citation_gate_required: true
+    keywords: ["dear editor", "answers to correspondents", "heart to heart", "advice to girls"]
+  guess_year:
+    initial_weight: 0.10
+    min_weight: 0.05
+    max_weight: 0.40
+    min_words: 35
+    max_words: 90
+    citation_gate_required: true
+    keywords: ["electric", "telephone", "automobile", "bicycle craze", "fashionable"]
+  story_sunday:
+    initial_weight: 0.15
+    min_weight: 0.05
+    max_weight: 0.40
+    min_words: 180
+    max_words: 360
+    citation_gate_required: false
+    keywords: ["letter", "winter", "memory", "portrait", "old house"]
+
+gates:
+  banned_words:
+    - "delve"
+    - "unlock"
+    - "game-changer"
+    - "tapestry"
+    - "testament"
+    - "navigate"
+    - "journey"
+    - "realm"
+    - "beacon"
+    - "myriad"
+    - "pivotal"
+  max_exclamation_marks: 2
+  hook_max_words: 15
+  hook_repeat_similarity_threshold: 0.85
+  citation_fuzzy_threshold: 0.90
+
+storage:
+  db_path: "data/archive_stories.db"
+  assets_dir: "data/assets"
