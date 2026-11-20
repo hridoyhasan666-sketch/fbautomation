@@ -6,6 +6,9 @@ on:
     - cron: '0 3 * * 1'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   generate-week:
     runs-on: ubuntu-latest
@@ -26,4 +29,12 @@ jobs:
       - name: Generate Batch of Posts & Cards
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python main.py generate --count 2
+        run: python main.py generate --count 1
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Add generated posts & cards [skip ci]" || echo "No changes to commit"
+          git push || echo "Push skipped"

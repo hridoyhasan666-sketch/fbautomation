@@ -13,7 +13,17 @@ from publish.schedule import MetaPublisher
 from ops.metrics import MetricsHarvester
 from learn.bandit import LearningLoop
 
+from db.database import init_db, get_seed_stock_counts
+
 def main():
+    init_db()
+    # Auto-seed starter pack if stock is empty
+    if not get_seed_stock_counts():
+        try:
+            LocHarvester().import_curated_seeds_file("data/seeds_curated.json")
+        except Exception:
+            pass
+
     parser = argparse.ArgumentParser(description="Archive Micro-Story Facebook Automation Engine")
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 

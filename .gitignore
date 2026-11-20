@@ -1,7 +1,5 @@
 .env
 __pycache__/
 *.pyc
-data/archive_stories.db
-data/rendered_cards/*.png
 data/rendered_reels/*.mp4
 .venv/

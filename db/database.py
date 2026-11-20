@@ -11,131 +11,136 @@ from datetime import datetime
 
 DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "archive_stories.db")
 
+def _ensure_tables_exist(conn: sqlite3.Connection):
+    """Creates all required tables if they do not exist."""
+    cursor = conn.cursor()
+    
+    # 1. Seeds table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS seeds (
+        seed_id TEXT PRIMARY KEY,
+        source TEXT NOT NULL,
+        source_url TEXT,
+        page_image_url TEXT,
+        date TEXT,
+        place TEXT,
+        ocr_text TEXT,
+        format TEXT NOT NULL,
+        pillar TEXT NOT NULL,
+        facts_json TEXT,
+        human_need TEXT,
+        modern_mirror TEXT,
+        price_data_json TEXT,
+        ad_crop_clues TEXT,
+        safety_flags_json TEXT,
+        status TEXT DEFAULT 'new',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    
+    # 2. Candidates & Drafts
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS candidates (
+        candidate_id TEXT PRIMARY KEY,
+        seed_id TEXT NOT NULL,
+        format TEXT NOT NULL,
+        persona TEXT NOT NULL,
+        hooks_json TEXT,
+        body TEXT NOT NULL,
+        claims_json TEXT,
+        source_line TEXT,
+        card_text TEXT,
+        judge_scores_json TEXT,
+        status TEXT DEFAULT 'draft',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (seed_id) REFERENCES seeds (seed_id)
+    )
+    """)
+    
+    # 3. Posts & Pipeline Queue
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS posts (
+        post_id TEXT PRIMARY KEY,
+        seed_id TEXT NOT NULL,
+        candidate_id TEXT,
+        format TEXT NOT NULL,
+        pillar TEXT NOT NULL,
+        selected_hook TEXT NOT NULL,
+        body TEXT NOT NULL,
+        source_line TEXT,
+        full_caption TEXT NOT NULL,
+        card_image_path TEXT,
+        reel_video_path TEXT,
+        status TEXT DEFAULT 'pending_approval',
+        telegram_message_id INTEGER,
+        scheduled_publish_time TIMESTAMP,
+        fb_post_id TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        published_at TIMESTAMP,
+        FOREIGN KEY (seed_id) REFERENCES seeds (seed_id)
+    )
+    """)
+    
+    # 4. Metrics & Performance
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS metrics (
+        post_id TEXT PRIMARY KEY,
+        reach INTEGER DEFAULT 0,
+        reactions INTEGER DEFAULT 0,
+        comments INTEGER DEFAULT 0,
+        shares INTEGER DEFAULT 0,
+        score REAL DEFAULT 0.0,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (post_id) REFERENCES posts (post_id)
+    )
+    """)
+    
+    # 5. Bandit Weights for Learning Loop
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS bandit_weights (
+        format TEXT PRIMARY KEY,
+        wins INTEGER DEFAULT 0,
+        losses INTEGER DEFAULT 0,
+        current_weight REAL DEFAULT 0.15,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    
+    # 6. Golden Examples
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS golden_examples (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        format TEXT NOT NULL,
+        post_id TEXT NOT NULL,
+        hook TEXT NOT NULL,
+        body TEXT NOT NULL,
+        score REAL NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    
+    # 7. Hook History (for repeat gate)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS hook_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        hook_text TEXT UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    
+    conn.commit()
+
 def get_connection(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
     os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
+    _ensure_tables_exist(conn)
     return conn
 
 def init_db(db_path: str = DEFAULT_DB_PATH):
     """Initializes all necessary tables."""
     with get_connection(db_path) as conn:
-        cursor = conn.cursor()
-        
-        # 1. Seeds table
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS seeds (
-            seed_id TEXT PRIMARY KEY,
-            source TEXT NOT NULL,
-            source_url TEXT,
-            page_image_url TEXT,
-            date TEXT,
-            place TEXT,
-            ocr_text TEXT,
-            format TEXT NOT NULL,
-            pillar TEXT NOT NULL,
-            facts_json TEXT,
-            human_need TEXT,
-            modern_mirror TEXT,
-            price_data_json TEXT,
-            ad_crop_clues TEXT,
-            safety_flags_json TEXT,
-            status TEXT DEFAULT 'new',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
-        
-        # 2. Candidates & Drafts
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS candidates (
-            candidate_id TEXT PRIMARY KEY,
-            seed_id TEXT NOT NULL,
-            format TEXT NOT NULL,
-            persona TEXT NOT NULL,
-            hooks_json TEXT,
-            body TEXT NOT NULL,
-            claims_json TEXT,
-            source_line TEXT,
-            card_text TEXT,
-            judge_scores_json TEXT,
-            status TEXT DEFAULT 'draft',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (seed_id) REFERENCES seeds (seed_id)
-        )
-        """)
-        
-        # 3. Posts & Pipeline Queue
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS posts (
-            post_id TEXT PRIMARY KEY,
-            seed_id TEXT NOT NULL,
-            candidate_id TEXT,
-            format TEXT NOT NULL,
-            pillar TEXT NOT NULL,
-            selected_hook TEXT NOT NULL,
-            body TEXT NOT NULL,
-            source_line TEXT,
-            full_caption TEXT NOT NULL,
-            card_image_path TEXT,
-            reel_video_path TEXT,
-            status TEXT DEFAULT 'pending_approval',
-            telegram_message_id INTEGER,
-            scheduled_publish_time TIMESTAMP,
-            fb_post_id TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            published_at TIMESTAMP,
-            FOREIGN KEY (seed_id) REFERENCES seeds (seed_id)
-        )
-        """)
-        
-        # 4. Metrics & Performance
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS metrics (
-            post_id TEXT PRIMARY KEY,
-            reach INTEGER DEFAULT 0,
-            reactions INTEGER DEFAULT 0,
-            comments INTEGER DEFAULT 0,
-            shares INTEGER DEFAULT 0,
-            score REAL DEFAULT 0.0,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (post_id) REFERENCES posts (post_id)
-        )
-        """)
-        
-        # 5. Bandit Weights for Learning Loop
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS bandit_weights (
-            format TEXT PRIMARY KEY,
-            wins INTEGER DEFAULT 0,
-            losses INTEGER DEFAULT 0,
-            current_weight REAL DEFAULT 0.15,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
-        
-        # 6. Golden Examples
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS golden_examples (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            format TEXT NOT NULL,
-            post_id TEXT NOT NULL,
-            hook TEXT NOT NULL,
-            body TEXT NOT NULL,
-            score REAL NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
-        
-        # 7. Hook History (for repeat gate)
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS hook_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            hook_text TEXT UNIQUE NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
-        
-        conn.commit()
+        _ensure_tables_exist(conn)
 
 # --- Seed Operations ---
 
