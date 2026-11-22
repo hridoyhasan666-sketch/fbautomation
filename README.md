@@ -8,7 +8,7 @@ original posts comparing how people lived ~100 years ago with how we live now.
 | When (UTC) | Workflow | What it does |
 |---|---|---|
 | 02:00 daily | `generate.yml` | Writes 3 posts (3 drafts each → quality gates → AI judge → polish → card image), sends each to Telegram |
-| every 2h (:15) | `schedule.yml` | Applies your Approve/Reject taps, schedules approved posts on Facebook |
+| every 10 min | `schedule.yml` | Applies your Approve/Reject taps, schedules approved posts on Facebook |
 | Sun 18:00 | `learn.yml` | Pulls engagement, shifts format mix toward what performs |
 
 Scheduling rules (`config.yaml → meta`): max **3 posts/day**, one per window

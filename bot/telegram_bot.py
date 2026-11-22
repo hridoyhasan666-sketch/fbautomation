@@ -49,6 +49,7 @@ class TelegramApprovalBot:
 
         text = (f"{html.escape(post.get('full_caption', ''))}\n\n"
                 f"<i>{html.escape(post['format'])} · {html.escape(post.get('pillar', ''))}</i>\n"
+                f"<i>Tap once. Your choice is applied within ~10 minutes and this message will show STATUS.</i>\n"
                 f"<code>{post_id}</code>")
         res = self._api("sendMessage", json={
             "chat_id": self.admin_chat_id,
