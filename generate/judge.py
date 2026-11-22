@@ -10,6 +10,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from utils.config import CONFIG
 from db.database import get_golden_examples
 from generate.llm import call_json
+from generate.draft import load_persona
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -35,6 +36,7 @@ class Judge:
 
         prompt = (_template("judge.md")
                   .replace("{{page_name}}", self.page_name)
+                  .replace("{{persona_content}}", load_persona(candidates[0].get("persona", "anthropologist")))
                   .replace("{{golden_examples}}", golden_str)
                   .replace("{{candidates_json}}", json.dumps(slim, indent=2)))
 
@@ -72,6 +74,7 @@ class Judge:
 
         prompt = (_template("polish.md")
                   .replace("{{page_name}}", self.page_name)
+                  .replace("{{persona_content}}", load_persona(winner.get("persona", "anthropologist")))
                   .replace("{{min_words}}", str(f_cfg.get("min_words", 40)))
                   .replace("{{max_words}}", str(f_cfg.get("max_words", 300)))
                   .replace("{{extra_rule}}", extra)

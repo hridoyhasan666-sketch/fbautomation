@@ -22,11 +22,16 @@ def _read(*parts: str) -> str:
     return ""
 
 
+def load_persona(persona_name: str) -> str:
+    """The owner's writer persona: core rules + the voice for this pillar. Used by draft, judge and polish."""
+    return _read("personas", "core.md") + "\n\n" + _read("personas", f"{persona_name}.md")
+
+
 class Drafter:
     def build_draft_prompt(self, slot: Dict[str, Any]) -> str:
         fmt, pillar, topic = slot["format"], slot["pillar"], slot["topic"]
         persona_name = CONFIG["pillars"].get(pillar, {}).get("persona", "anthropologist")
-        persona = _read("personas", "core.md") + "\n\n" + _read("personas", f"{persona_name}.md")
+        persona = load_persona(persona_name)
         brand = CONFIG.get("brand", {})
         cap = CONFIG.get("caption", {})
 
