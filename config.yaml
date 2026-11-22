@@ -1,89 +1,122 @@
-# Archive Micro-Story Facebook Page Configuration
+# Sincerely Yours - Facebook Page Content Engine Configuration
+# Theme: "Old news, modern life" - how people lived ~100 years ago vs. how we live now.
 
 models:
   draft: "gemini-3.1-flash-lite"
   judge: "gemini-3.1-flash-lite"
   fallback: "gemini-3.5-flash-lite"
-  image: "gemini-3.1-flash-image"
+  last_resort: "gemini-3.8-flash"
+
+brand:
+  page_name: "Sincerely Yours"
+  tagline: "Old news, modern life"
+
+caption:
+  # Tags always appended after the topical ones the model picks.
+  brand_hashtags: ["#SincerelyYours", "#OldNewsModernLife"]
+  min_topic_hashtags: 3
+  max_topic_hashtags: 5
 
 meta:
   graph_api_version: "v21.0"
-  min_interval_hours: 2.5
+  posts_per_day: 3
+  # Each post lands at a random minute inside one of these UTC windows (one post per window per day).
+  # 12-15 UTC = morning US East / afternoon UK; 16-19 = US midday / UK evening; 20-23 = US afternoon/evening.
   daily_posting_windows_utc:
-    - { start: 12, end: 14 }
-    - { start: 16, end: 18 }
-    - { start: 20, end: 22 }
+    - { start: 12, end: 15 }
+    - { start: 16, end: 19 }
+    - { start: 20, end: 23 }
+  min_gap_hours: 2.5
+  # Only fill this many days ahead, so posts aren't burned all at once.
+  schedule_days_ahead: 3
 
-harvest:
-  loc_api_url: "https://www.loc.gov/collections/chronicling-america/"
-  max_year: 1930
-  rate_limit_delay_seconds: 2.5
-  stock_alert_threshold: 10
-  target_stock_per_format: 15
+generation:
+  # Posts generated per daily run (3/day posting => 3/day generation)
+  daily_count: 3
+  # Don't reuse a topic that was used in the last N posts
+  topic_cooldown_posts: 40
 
 pillars:
   money:
     persona: "anthropologist"
-    keywords: ["pawn", "rent due", "debt", "wages", "swindle", "bargain sale", "store prices"]
+    topics:
+      - "saving money before credit cards existed"
+      - "buying on credit and layaway in the 1920s vs Buy Now Pay Later today"
+      - "what a week's wages actually bought a family in 1910"
+      - "mending and repairing things instead of replacing them"
+      - "the Sears catalog as the Amazon of its day"
+      - "keeping up appearances: wanting to look richer than you are"
+      - "children working and giving their wages to the family"
+      - "the corner grocer who let neighbours pay at the end of the month"
+      - "pawnshops as the bank of ordinary people"
+      - "the Great Depression habit of saving string, jars and paper"
+      - "how a single radio or telephone was a luxury shared by a street"
+      - "gift giving when people had almost nothing"
   love_family:
     persona: "time_traveler"
-    keywords: ["lonely", "matrimonial", "breach of promise", "lost letter", "elope", "courtship"]
+    topics:
+      - "courting by handwritten letter vs texting"
+      - "waiting weeks for a reply vs being left on read"
+      - "calling on a family before dating someone"
+      - "the family dinner table as the only social network"
+      - "grandparents living with the family under one roof"
+      - "lonely hearts newspaper ads vs dating apps"
+      - "keeping love letters in a box for a lifetime"
+      - "long-distance love when a letter took a month"
+      - "how children played outside all day without supervision"
+      - "front porch evenings with neighbours"
+      - "wedding traditions that were simple and cheap"
+      - "how people grieved and remembered loved ones"
   strange_true:
     persona: "observer"
-    keywords: ["fined for", "mystery", "strange", "umbrella", "queer case", "curious dispute"]
+    topics:
+      - "early fears that the telephone would ruin conversation"
+      - "people panicking that novels and bicycles were corrupting the youth"
+      - "the first traffic rules when cars met horses"
+      - "patent medicines that promised to cure everything"
+      - "milkmen, ice men and door-to-door delivery before refrigerators"
+      - "how people told time and kept appointments before phones"
+      - "early moral panic about electric light keeping people awake"
+      - "snake-oil salesmen and today's wellness influencers"
+      - "manners and etiquette rules that sound absurd now"
+      - "how news travelled by word of mouth and town criers"
   same_human:
     persona: "anthropologist"
-    keywords: ["exhaustion", "worry", "fashionable", "luxuries", "complaint", "modern habit"]
+    topics:
+      - "burnout and 'nervous exhaustion' a century ago"
+      - "complaining that 'young people today' are lazy, in every generation"
+      - "boredom before screens existed"
+      - "the habit of writing a diary every night"
+      - "walking everywhere and what it did for body and mind"
+      - "Sunday as a real day of rest"
+      - "neighbours knowing each other by name"
+      - "learning skills by apprenticeship instead of tutorials"
+      - "patience: waiting for things instead of instant delivery"
+      - "how people handled loneliness before social media"
+      - "small daily rituals our grandparents kept"
+      - "fear of missing out, 1900s edition"
 
 formats:
-  true_retelling:
+  then_vs_now:
     initial_weight: 0.30
-    min_weight: 0.05
-    max_weight: 0.40
-    min_words: 120
-    max_words: 260
-    citation_gate_required: true
-    keywords: ["clerk", "arrested", "dispute", "incident", "court", "swindle"]
-  price:
+    min_words: 90
+    max_words: 180
+  forgotten_habit:
+    initial_weight: 0.25
+    min_words: 80
+    max_words: 170
+  old_wisdom:
+    initial_weight: 0.20
+    min_words: 80
+    max_words: 170
+  life_question:
     initial_weight: 0.15
-    min_weight: 0.05
-    max_weight: 0.40
-    min_words: 40
-    max_words: 130
-    citation_gate_required: true
-    keywords: ["cents per", "price", "sale", "bargain", "shoes for", "beef per pound"]
-  old_ad:
-    initial_weight: 0.15
-    min_weight: 0.05
-    max_weight: 0.40
     min_words: 40
     max_words: 100
-    citation_gate_required: false
-    keywords: ["advertisement", "guaranteed cure", "new invention", "wanted", "patented"]
-  advice:
-    initial_weight: 0.15
-    min_weight: 0.05
-    max_weight: 0.40
-    min_words: 90
-    max_words: 190
-    citation_gate_required: true
-    keywords: ["dear editor", "answers to correspondents", "heart to heart", "advice to girls"]
-  guess_year:
+  short_story:
     initial_weight: 0.10
-    min_weight: 0.05
-    max_weight: 0.40
-    min_words: 35
-    max_words: 90
-    citation_gate_required: true
-    keywords: ["electric", "telephone", "automobile", "bicycle craze", "fashionable"]
-  story_sunday:
-    initial_weight: 0.15
-    min_weight: 0.05
-    max_weight: 0.40
-    min_words: 180
-    max_words: 360
-    citation_gate_required: false
-    keywords: ["letter", "winter", "memory", "portrait", "old house"]
+    min_words: 150
+    max_words: 280
 
 gates:
   banned_words:
@@ -98,11 +131,12 @@ gates:
     - "beacon"
     - "myriad"
     - "pivotal"
-  max_exclamation_marks: 2
+    - "in today's fast-paced world"
+    - "ever-evolving"
+  max_exclamation_marks: 1
   hook_max_words: 15
-  hook_repeat_similarity_threshold: 0.85
-  citation_fuzzy_threshold: 0.90
+  hook_repeat_similarity_threshold: 0.80
+  min_judge_score: 7.0
 
 storage:
   db_path: "data/archive_stories.db"
-  assets_dir: "data/assets"

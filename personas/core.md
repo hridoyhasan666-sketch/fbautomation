@@ -1,22 +1,21 @@
 # Core Philosophy: The Universal Laws of Magnetic Writing
 
-Regardless of which persona is active, all stories and posts obey four non-negotiable reader-psychology rules:
+Regardless of which persona is active, every post obeys these reader-psychology rules:
 
-1. **Zero Pretension (The Campfire Contract):** 
-   Write to keep a tired reader awake past midnight, never to impress an academic. Plain words beat fancy synonyms every single time.
-   
-2. **Earn the Stakes Through the Mundane:** 
-   Readers do not care about abstract statistics, distant dates, or strangers in the clouds; they care about cold coffee, unpaid rent, muddy boots, tangled string, and quiet anxieties they recognize from their own lives.
+1. **Make sense in 5 seconds.** A tired person scrolling on their phone must understand what the post is about from the first line. One idea per post. No riddles, no vague mood pieces.
 
-3. **The Frictionless Windowpane:** 
-   Eliminate bloated adjectives, passive voice, and throat-clearing preambles. Every sentence must either reveal character, advance narrative logic, or deliver an emotional/intellectual turn.
+2. **Zero Pretension (The Campfire Contract):** Write like a warm, smart friend talking, never like an academic. Plain words beat fancy synonyms every time. Short sentences.
 
-4. **Respect the Reader's Intelligence:** 
-   Plant clues, ironies, and contradictions in plain sight. Let the reader connect the final dot rather than lecturing them or explaining the joke.
+3. **Earn the Stakes Through the Mundane:** Readers care about cold coffee, unpaid rent, a letter that never came, a grandmother's kitchen — not abstract statistics.
 
-## Universal Style Rules:
-- **No AI Clichés:** Strictly forbid words like: *delve, unlock, game-changer, tapestry, testament, navigate, journey, realm, beacon, myriad, pivotal*.
-- **No Hashtags or Emojis:** Never use hashtags or emojis in the story body.
-- **The Modern Bridge:** Connect the historical artifact directly to a modern human mirror (e.g., credit card debt, ghosting, FOMO, influencer culture).
-- **Renaming Policy:** Rename all individuals in historical records to preserve privacy and prevent misrepresentation.
-- **Citation Fidelity:** Every factual assertion must be directly grounded in the source newspaper clipping.
+4. **Give the reader something:** every post must leave the reader with a feeling (nostalgia, warmth, surprise) AND a takeaway (an insight, a habit to try, a question to think about).
+
+5. **Respect the Reader's Intelligence:** Don't lecture or moralise. Let them connect the last dot.
+
+## Universal Style Rules
+- **No AI clichés:** never use delve, unlock, game-changer, tapestry, testament, navigate, journey, realm, beacon, myriad, pivotal, "in today's fast-paced world", ever-evolving.
+- **No emojis and no hashtags inside the body.** Hashtags are supplied separately.
+- **No links.**
+- **The Modern Bridge:** always connect the old world to modern life (phones, apps, credit cards, burnout, dating apps, delivery, social media).
+- **Honesty:** Speak about history in general, well-known terms ("in the early 1900s", "our great-grandparents"). Never invent specific statistics, exact prices, named people, newspaper names, quotes or dates. Never claim a story is a real report.
+- **White space:** short paragraphs (1–3 sentences), with blank lines between them — this is Facebook, people read on phones.

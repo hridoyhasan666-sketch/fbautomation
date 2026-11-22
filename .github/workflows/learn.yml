@@ -1,20 +1,26 @@
-name: Learning Loop & Thompson Sampling (Sundays 18:00 UTC)
+name: Weekly Metrics & Learning (Sundays 18:00 UTC)
 
 on:
   schedule:
-    # Runs Sundays at 18:00 UTC (12:00 AM Monday Dhaka)
     - cron: '0 18 * * 0'
   workflow_dispatch:
 
 permissions:
   contents: write
 
+# All workflows share the SQLite DB committed to the repo; never let two run at once.
+concurrency:
+  group: fb-engine-db
+  cancel-in-progress: false
+
 jobs:
-  learning-loop:
+  run:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout latest main
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,17 +32,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Sync Metrics & Reweight Bandit
+      - name: Sync metrics and reweight formats
         env:
           META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
         run: |
           python main.py metrics
           python main.py learn
 
-      - name: Commit and push changes
+      - name: Commit and push database
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
-          git commit -m "Update bandit weights and golden examples [skip ci]" || echo "No changes to commit"
-          git push || echo "Push skipped"
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Weekly metrics and learning [skip ci]"
+          git push

@@ -1,20 +1,26 @@
-name: Weekly Generation & Card Rendering (Mondays 03:00 UTC)
+name: Daily Generate & Send for Approval (02:00 UTC)
 
 on:
   schedule:
-    # Runs Mondays at 03:00 UTC (9:00 AM Dhaka)
-    - cron: '0 3 * * 1'
+    - cron: '0 2 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
 
+# All workflows share the SQLite DB committed to the repo; never let two run at once.
+concurrency:
+  group: fb-engine-db
+  cancel-in-progress: false
+
 jobs:
-  generate-week:
+  run:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout latest main
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -26,15 +32,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Generate Batch of Posts & Cards
+      - name: Generate posts and deliver to Telegram
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python main.py generate --count 1
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+        run: |
+          python main.py generate
+          python main.py deliver
 
-      - name: Commit and push changes
+      - name: Commit and push database
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
-          git commit -m "Add generated posts & cards [skip ci]" || echo "No changes to commit"
-          git push || echo "Push skipped"
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Generate daily posts [skip ci]"
+          git push

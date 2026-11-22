@@ -21,8 +21,7 @@ class MetricsHarvester:
     def fetch_post_metrics(self, fb_post_id: str) -> Dict[str, int]:
         """Fetches post metrics from Graph API."""
         if not self.access_token or fb_post_id.startswith("simulated"):
-            # Mock / simulated engagement for dry run or offline testing
-            return {"reach": 1250, "reactions": 42, "comments": 8, "shares": 6}
+            return {"reach": 0, "reactions": 0, "comments": 0, "shares": 0}
 
         url = f"{GRAPH_BASE_URL}/{fb_post_id}"
         params = {
@@ -54,7 +53,11 @@ class MetricsHarvester:
         """Updates metrics for all scheduled or published posts."""
         with get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT post_id, fb_post_id FROM posts WHERE fb_post_id IS NOT NULL")
+            cursor.execute(
+                "SELECT post_id, fb_post_id FROM posts WHERE fb_post_id IS NOT NULL "
+                "AND fb_post_id NOT LIKE 'simulated%' "
+                "AND (scheduled_publish_time IS NULL OR scheduled_publish_time < strftime('%s','now'))"
+            )
             posts = cursor.fetchall()
 
         synced = 0

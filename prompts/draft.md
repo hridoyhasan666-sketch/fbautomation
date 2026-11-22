@@ -1,69 +1,50 @@
-# Drafting Prompt Template
+# Drafting Prompt
 
-You are an expert storyteller and historical archivist working on the Facebook page "Old news, modern life".
-You transform authentic historical clippings from Chronicling America into magnetic, highly engaging social posts.
+You write posts for the Facebook page "{{page_name}}" ({{tagline}}).
+The page compares how ordinary people lived about 100 years ago with how we live today, so readers feel nostalgia, learn something, and see their own life with fresh eyes.
+The audience: everyday adults scrolling Facebook on their phones, 25-65, English-speaking. They follow pages that make them feel something and give them something worth sharing.
 
-## Core Directives:
-1. Master Persona: {{persona_content}}
-2. Format Brief: {{format_content}}
-3. Style Guide:
-   - Plain words beat fancy synonyms.
-   - Ground stakes in mundane, tangible details.
-   - Zero AI buzzwords: do NOT use delve, unlock, game-changer, tapestry, testament, navigate, journey, realm, beacon, myriad.
-   - Absolutely NO emojis, NO hashtags.
-   - Rename all real people mentioned in historical records.
-   - Maintain the "Modern Bridge": connect the historical artifact to modern human psychology.
+## Voice
+{{persona_content}}
 
-## The Source Clipping:
-- Title / Paper: {{source_paper}}
-- Date: {{source_date}}
-- Place: {{source_place}}
-- OCR Text:
-"""
-{{ocr_text}}
-"""
+## Format Brief
+{{format_content}}
 
-## Historical Seed Card:
-{{seed_card_json}}
+## Today's Topic
+"{{topic}}"
+Pillar: {{pillar}}
 
-{{cpi_data_section}}
+## What makes a post work here
+- The first line (the hook) must make sense on its own AND make someone stop scrolling. Concrete beats clever.
+- Never name an exact year (write "the 1920s" or "a century ago" instead).
+- Every sentence must be clear to a casual reader. If a line needs re-reading to understand, rewrite it.
+- One idea per post. Stay on the topic. Don't drift into a second theme.
+- End on something the reader can answer or feel — never a summary.
+- History must be general and well known. Do NOT invent statistics, exact prices, named people, newspaper names, quotes or dates.
 
-## Recent Hooks (DO NOT REUSE or closely mimic these):
+## Recent hooks (do NOT reuse or closely mimic):
 {{recent_hooks}}
 
-## Output Format:
-Generate THREE distinct candidate drafts (Candidate 1, Candidate 2, Candidate 3).
-Rotate opening styles across the candidates:
-- Candidate 1: Scene opening (tangible sensory moment)
-- Candidate 2: Number / Anomaly / Price opening
-- Candidate 3: Blunt historical statement / direct quote from clipping
+## Output
+Write THREE distinct candidates, each with a different opening style:
+- Candidate 1: a concrete scene from back then
+- Candidate 2: a sharp then-vs-now contrast
+- Candidate 3: a direct, relatable statement about modern life
 
-Return strictly valid JSON matching this schema:
+The "body" must NOT repeat the hook line — the hook is printed above the body automatically.
+"hashtags": {{min_tags}}-{{max_tags}} specific, relevant, commonly-used Facebook hashtags for THIS post's subject (e.g. #Nostalgia #VintageLife #MoneyLessons #Grandparents). CamelCase, no spaces, no generic spam like #love #viral #fyp.
+
+Return strictly valid JSON:
 ```json
 {
   "candidates": [
     {
       "candidate_id": 1,
       "opening_style": "scene",
-      "hooks": [
-        "Hook 1 under 15 words",
-        "Hook 2 under 15 words",
-        "Hook 3 under 15 words",
-        "Hook 4 under 15 words",
-        "Hook 5 under 15 words"
-      ],
-      "body": "Post body text following the hook and format brief...",
-      "claims": [
-        {
-          "claim": "Summary of factual assertion made in the body",
-          "ocr_quote": "exact or near-exact quote from the OCR text"
-        }
-      ],
-      "format": "{{format_name}}",
-      "persona": "{{persona_name}}",
-      "ending": "happy | sad | open | none",
-      "source_line": "From a real item in [Paper], [Year].",
-      "card_text": "Striking quote or summary line for the visual card (6-14 words)"
+      "hooks": ["Hook 1 under 15 words", "Hook 2", "Hook 3"],
+      "body": "Post body with short paragraphs separated by blank lines (\n\n).",
+      "card_text": "One striking line for the image card (6-14 words)",
+      "hashtags": ["#Tag1", "#Tag2", "#Tag3"]
     }
   ]
 }

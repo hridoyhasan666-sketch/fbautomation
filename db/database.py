@@ -128,6 +128,11 @@ def _ensure_tables_exist(conn: sqlite3.Connection):
     )
     """)
     
+    # Migrations for older databases
+    cols = {r[1] for r in cursor.execute("PRAGMA table_info(posts)").fetchall()}
+    if "topic" not in cols:
+        cursor.execute("ALTER TABLE posts ADD COLUMN topic TEXT")
+
     conn.commit()
 
 def get_connection(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
@@ -217,8 +222,8 @@ def save_post(post_data: Dict[str, Any], db_path: str = DEFAULT_DB_PATH):
         INSERT OR REPLACE INTO posts (
             post_id, seed_id, candidate_id, format, pillar, selected_hook,
             body, source_line, full_caption, card_image_path, reel_video_path,
-            status, telegram_message_id, scheduled_publish_time, fb_post_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            status, telegram_message_id, scheduled_publish_time, fb_post_id, topic
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             post_data["post_id"],
             post_data["seed_id"],
@@ -234,23 +239,59 @@ def save_post(post_data: Dict[str, Any], db_path: str = DEFAULT_DB_PATH):
             post_data.get("status", "pending_approval"),
             post_data.get("telegram_message_id"),
             post_data.get("scheduled_publish_time"),
-            post_data.get("fb_post_id")
+            post_data.get("fb_post_id"),
+            post_data.get("topic")
         ))
         conn.commit()
 
-def update_post_status(post_id: str, status: str, fb_post_id: Optional[str] = None, db_path: str = DEFAULT_DB_PATH):
+def update_post_status(post_id: str, status: str, fb_post_id: Optional[str] = None,
+                       scheduled_publish_time: Optional[int] = None, db_path: str = DEFAULT_DB_PATH):
     with get_connection(db_path) as conn:
         cursor = conn.cursor()
+        cursor.execute("UPDATE posts SET status = ? WHERE post_id = ?", (status, post_id))
         if fb_post_id:
-            cursor.execute("UPDATE posts SET status = ?, fb_post_id = ? WHERE post_id = ?", (status, fb_post_id, post_id))
-        else:
-            cursor.execute("UPDATE posts SET status = ? WHERE post_id = ?", (status, post_id))
+            cursor.execute("UPDATE posts SET fb_post_id = ? WHERE post_id = ?", (fb_post_id, post_id))
+        if scheduled_publish_time:
+            cursor.execute("UPDATE posts SET scheduled_publish_time = ? WHERE post_id = ?", (int(scheduled_publish_time), post_id))
         conn.commit()
+
+def get_post_status(post_id: str, db_path: str = DEFAULT_DB_PATH) -> Optional[str]:
+    with get_connection(db_path) as conn:
+        row = conn.execute("SELECT status FROM posts WHERE post_id = ?", (post_id,)).fetchone()
+        return row["status"] if row else None
+
+def set_telegram_message_id(post_id: str, message_id: int, db_path: str = DEFAULT_DB_PATH):
+    with get_connection(db_path) as conn:
+        conn.execute("UPDATE posts SET telegram_message_id = ? WHERE post_id = ?", (message_id, post_id))
+        conn.commit()
+
+def get_scheduled_publish_times(db_path: str = DEFAULT_DB_PATH) -> List[int]:
+    """Unix timestamps of every post already handed to Facebook (scheduled or published)."""
+    with get_connection(db_path) as conn:
+        rows = conn.execute(
+            "SELECT scheduled_publish_time FROM posts WHERE scheduled_publish_time IS NOT NULL "
+            "AND status IN ('scheduled', 'published')"
+        ).fetchall()
+        out = []
+        for r in rows:
+            try:
+                out.append(int(r["scheduled_publish_time"]))
+            except (TypeError, ValueError):
+                pass
+        return out
+
+def get_recent_topics(limit: int = 40, db_path: str = DEFAULT_DB_PATH) -> List[str]:
+    with get_connection(db_path) as conn:
+        rows = conn.execute(
+            "SELECT topic FROM posts WHERE topic IS NOT NULL AND status != 'rejected' ORDER BY created_at DESC LIMIT ?",
+            (limit,)
+        ).fetchall()
+        return [r["topic"] for r in rows]
 
 def get_pending_delivery_posts(db_path: str = DEFAULT_DB_PATH) -> List[Dict[str, Any]]:
     with get_connection(db_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM posts WHERE status = 'pending_approval' ORDER BY created_at ASC")
+        cursor.execute("SELECT * FROM posts WHERE status = 'pending_approval' AND telegram_message_id IS NULL ORDER BY created_at ASC")
         return [dict(r) for r in cursor.fetchall()]
 
 def get_approved_unscheduled_posts(db_path: str = DEFAULT_DB_PATH) -> List[Dict[str, Any]]:

@@ -1,23 +1,18 @@
 """
-End-to-End Generation & Curation Pipeline.
-Connects:
-Seed Selection -> 3x Drafting -> Code & Citation Gates -> Judge Tournament -> Section 5 Polish -> Card Rendering -> Pending Post Queue.
+End-to-End Generation Pipeline.
+Pick format + fresh topic -> 3 drafts -> code gates -> judge -> polish -> re-gate -> card -> approval queue.
 """
 
+import random
 import uuid
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from utils.config import CONFIG
-from db.database import (
-    get_next_seed_for_format,
-    mark_seed_used,
-    save_post,
-    add_hook_to_history,
-    get_recent_hooks
-)
+from db.database import save_post, add_hook_to_history, get_recent_hooks, get_recent_topics, get_bandit_weights
 from generate.draft import Drafter
-from generate.gates import GateChecker
+from generate.gates import GateChecker, build_hashtags, compose_caption
 from generate.judge import Judge
 from render.card import CardRenderer
+
 
 class StoryPipeline:
     def __init__(self):
@@ -26,108 +21,86 @@ class StoryPipeline:
         self.judge = Judge()
         self.renderer = CardRenderer()
 
-    def generate_single_slot(self, format_name: str) -> Optional[Dict[str, Any]]:
-        """Executes the full pipeline for one post slot."""
-        print(f"\n[Pipeline] === Starting generation for format: {format_name} ===")
-        
-        # 1. Fetch seed card
-        seed = get_next_seed_for_format(format_name)
-        if not seed:
-            print(f"[Pipeline] No new seeds available for format '{format_name}'. Run harvest first.")
+    def pick_format(self) -> str:
+        formats = CONFIG["formats"]
+        learned = get_bandit_weights()
+        weights = [learned.get(f, formats[f].get("initial_weight", 0.1)) for f in formats]
+        return random.choices(list(formats), weights=weights, k=1)[0]
+
+    def pick_topic(self) -> Tuple[str, str]:
+        cooldown = CONFIG.get("generation", {}).get("topic_cooldown_posts", 40)
+        recent = set(get_recent_topics(limit=cooldown))
+        all_topics = [(p, t) for p, cfg in CONFIG["pillars"].items() for t in cfg.get("topics", [])]
+        fresh = [pt for pt in all_topics if pt[1] not in recent]
+        return random.choice(fresh or all_topics)
+
+    def generate_single_slot(self, format_name: Optional[str] = None, max_attempts: int = 3) -> Optional[Dict[str, Any]]:
+        for attempt in range(1, max_attempts + 1):
+            fmt = format_name or self.pick_format()
+            pillar, topic = self.pick_topic()
+            print(f"\n[Pipeline] Attempt {attempt}: format={fmt} pillar={pillar} topic='{topic}'")
+            post = self._run(fmt, pillar, topic)
+            if post:
+                return post
+        print("[Pipeline] Gave up on this slot after all attempts.")
+        return None
+
+    def _run(self, fmt: str, pillar: str, topic: str) -> Optional[Dict[str, Any]]:
+        slot = {"format": fmt, "pillar": pillar, "topic": topic}
+        candidates = self.drafter.generate_candidates(slot)
+        if not candidates:
+            print("[Pipeline] Drafting failed.")
             return None
 
-        print(f"[Pipeline] Loaded seed {seed['seed_id']}: '{seed.get('place')}' ({seed.get('date')})")
-
-        # 2. Draft 3 candidates with 5 hooks each
-        raw_candidates = self.drafter.generate_candidates(seed)
-        print(f"[Pipeline] Generated {len(raw_candidates)} candidate drafts.")
-
-        # 3. Filter through Code & Citation Gates
         recent_hooks = get_recent_hooks(limit=60)
-        surviving_candidates = []
-        
-        for cand in raw_candidates:
-            passed, reason = self.checker.evaluate_candidate(cand, seed, recent_hooks)
-            if passed:
-                surviving_candidates.append(cand)
-                print(f"[Pipeline] Candidate {cand.get('candidate_id')} PASSED all quality & citation gates.")
-            else:
-                print(f"[Pipeline] Candidate {cand.get('candidate_id')} REJECTED by gate: {reason}")
-
-        if not surviving_candidates:
-            print("[Pipeline] No candidates survived quality gates. Retrying or discarding seed.")
+        survivors = []
+        for c in candidates:
+            ok, reason = self.checker.evaluate_candidate(c, recent_hooks)
+            print(f"[Pipeline] Candidate {c.get('candidate_id')}: {'PASS' if ok else 'REJECT ' + reason}")
+            if ok:
+                survivors.append(c)
+        if not survivors:
             return None
 
-        # 4. Judge Tournament
-        winner, chosen_hook, score = self.judge.run_tournament(surviving_candidates, format_name)
+        winner, hook, score = self.judge.run_tournament(survivors, fmt)
         if not winner:
-            print(f"[Pipeline] No candidate passed Judge tournament with score >= 7.0.")
             return None
+        print(f"[Pipeline] Winner (score {score}): '{hook}'")
 
-        print(f"[Pipeline] Winning draft selected (Score: {score}/10): '{chosen_hook}'")
-
-        # 5. Section 5 Polish Pass
-        polished = self.judge.polish_post(winner, chosen_hook, seed)
-
-        # Re-verify polished post with gates to prevent hallucinated details
-        recheck_cand = {
-            "format": format_name,
-            "body": polished["body"],
-            "hooks": [polished["selected_hook"]],
-            "claims": winner.get("claims", [])
-        }
-        re_ok, re_msg = self.checker.evaluate_candidate(recheck_cand, seed, recent_hooks)
-        if not re_ok:
-            print(f"[Pipeline] Warning: Polish pass triggered gate rejection ({re_msg}). Reverting to pre-polish.")
-            final_hook = chosen_hook
-            final_body = winner["body"]
-            final_source = winner.get("source_line", "")
-            final_card_text = winner.get("card_text", chosen_hook)
-            full_caption = f"{chosen_hook}\n\n{winner['body']}\n\n{final_source}\nSource: {seed.get('source_url', '')}".strip()
+        polished = self.judge.polish_post(winner, hook)
+        recheck = {"format": fmt, "body": polished["body"], "hooks": [polished["hook"]]}
+        if self.checker.evaluate_candidate(recheck, recent_hooks)[0]:
+            final = polished
         else:
-            final_hook = polished["selected_hook"]
-            final_body = polished["body"]
-            final_source = polished.get("source_line", "")
-            final_card_text = polished.get("card_text", final_hook)
-            full_caption = polished["full_caption"]
+            print("[Pipeline] Polished version failed gates; using the judged draft.")
+            final = {"hook": hook, "body": winner["body"], "card_text": winner.get("card_text") or hook}
+
+        hashtags = build_hashtags(winner.get("hashtags", []))
+        caption = compose_caption(final["hook"], final["body"], hashtags)
 
         post_id = f"post-{uuid.uuid4().hex[:8]}"
+        card_path = self.renderer.render_card(
+            {"format": fmt, "selected_hook": final["hook"], "card_text": final["card_text"]}, post_id
+        )
 
-        # 6. Render Story Card
-        card_data = {
-            "format": format_name,
-            "selected_hook": final_hook,
-            "card_text": final_card_text
-        }
-        card_path = self.renderer.render_card(card_data, seed, post_id)
-
-        # 7. Save to Database
-        post_record = {
+        record = {
             "post_id": post_id,
-            "seed_id": seed["seed_id"],
-            "candidate_id": winner.get("candidate_id"),
-            "format": format_name,
-            "pillar": seed["pillar"],
-            "selected_hook": final_hook,
-            "body": final_body,
-            "source_line": final_source,
-            "full_caption": full_caption,
+            "seed_id": f"topic:{pillar}",
+            "candidate_id": str(winner.get("candidate_id")),
+            "format": fmt,
+            "pillar": pillar,
+            "topic": topic,
+            "selected_hook": final["hook"],
+            "body": final["body"],
+            "source_line": "",
+            "full_caption": caption,
             "card_image_path": card_path,
-            "status": "pending_approval"
+            "status": "pending_approval",
         }
-        save_post(post_record)
-        mark_seed_used(seed["seed_id"])
-        add_hook_to_history(final_hook)
+        save_post(record)
+        add_hook_to_history(final["hook"])
+        print(f"[Pipeline] Created {post_id}, waiting for Telegram approval.")
+        return record
 
-        print(f"[Pipeline] ✅ Successfully created {post_id} ready for Telegram approval!\n")
-        return post_record
-
-    def generate_batch(self, count_per_format: int = 1) -> int:
-        """Generates a batch of posts across all configured formats."""
-        created = 0
-        for fmt in CONFIG["formats"]:
-            for _ in range(count_per_format):
-                res = self.generate_single_slot(fmt)
-                if res:
-                    created += 1
-        return created
+    def generate_batch(self, count: int) -> int:
+        return sum(1 for _ in range(count) if self.generate_single_slot())

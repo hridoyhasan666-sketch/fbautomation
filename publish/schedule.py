@@ -1,19 +1,61 @@
 """
 Meta Facebook Graph API Publisher and Scheduler.
-Schedules approved posts to Meta via POST /{page-id}/photos or POST /{page-id}/feed
-with published=false and scheduled_publish_time in peak US/UK engagement windows.
+
+Schedules approved posts with published=false + scheduled_publish_time.
+Rules:
+- At most `posts_per_day` posts per UTC day, at most one per posting window.
+- Each post gets a random minute inside its window, and at least `min_gap_hours` from any other post.
+- Already-taken slots come from BOTH the local DB and Facebook's own scheduled-post list,
+  so repeated runs (every 2h on GitHub Actions) never stack posts on the same time.
 """
 
-import os
 import random
 import requests
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 from utils.config import CONFIG, META_PAGE_ID, META_PAGE_ACCESS_TOKEN
-from db.database import get_approved_unscheduled_posts, update_post_status
+from db.database import get_approved_unscheduled_posts, update_post_status, get_scheduled_publish_times
+from render.card import resolve_path
 
-GRAPH_API_VERSION = CONFIG.get("meta", {}).get("graph_api_version", "v21.0")
-GRAPH_BASE_URL = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
+META_CFG = CONFIG.get("meta", {})
+GRAPH_BASE_URL = f"https://graph.facebook.com/{META_CFG.get('graph_api_version', 'v21.0')}"
+DEFAULT_WINDOWS = [{"start": 12, "end": 15}, {"start": 16, "end": 19}, {"start": 20, "end": 23}]
+
+
+def pick_slot(taken: List[int], now: Optional[datetime] = None) -> Optional[int]:
+    """Returns a unix timestamp for the next free random slot, or None if the lookahead is full."""
+    now = now or datetime.now(timezone.utc)
+    windows = META_CFG.get("daily_posting_windows_utc", DEFAULT_WINDOWS)
+    per_day = META_CFG.get("posts_per_day", 3)
+    gap = META_CFG.get("min_gap_hours", 2.5) * 3600
+    days_ahead = META_CFG.get("schedule_days_ahead", 3)
+    earliest = now + timedelta(minutes=20)  # Facebook requires >= 10 minutes ahead
+
+    taken_dt = [datetime.fromtimestamp(t, tz=timezone.utc) for t in taken]
+
+    for offset in range(days_ahead + 1):
+        day = (now + timedelta(days=offset)).date()
+        on_day = [t for t in taken_dt if t.date() == day]
+        if len(on_day) >= per_day:
+            continue
+
+        for w in windows:
+            w_start = datetime(day.year, day.month, day.day, tzinfo=timezone.utc) + timedelta(hours=w["start"])
+            w_end = datetime(day.year, day.month, day.day, tzinfo=timezone.utc) + timedelta(hours=w["end"])
+            if any(w_start <= t < w_end for t in on_day):
+                continue  # one post per window
+            lo = max(w_start, earliest)
+            if lo >= w_end:
+                continue
+            span = int((w_end - lo).total_seconds()) - 60
+            if span <= 0:
+                continue
+            for _ in range(30):
+                cand = lo + timedelta(seconds=random.randint(0, span))
+                if all(abs((cand - t).total_seconds()) >= gap for t in taken_dt):
+                    return int(cand.timestamp())
+    return None
+
 
 class MetaPublisher:
     def __init__(self, page_id: Optional[str] = None, access_token: Optional[str] = None):
@@ -23,142 +65,86 @@ class MetaPublisher:
     def is_configured(self) -> bool:
         return bool(self.page_id and self.access_token)
 
-    def test_visibility_post(self, message: str = "Archive discovery test post. Real history, modern mirrors.") -> Dict[str, Any]:
-        """
-        Phase 2 Verification Test:
-        Publishes one immediate public text post to prove Business App & Page token permissions work.
-        """
+    def fetch_facebook_scheduled_times(self) -> List[int]:
+        """Scheduled posts that Facebook already holds for the page."""
         if not self.is_configured():
-            return {"success": False, "error": "META_PAGE_ID or META_PAGE_ACCESS_TOKEN is missing in .env"}
-
-        url = f"{GRAPH_BASE_URL}/{self.page_id}/feed"
-        payload = {
-            "message": message,
-            "access_token": self.access_token
-        }
-        
+            return []
+        out, url = [], f"{GRAPH_BASE_URL}/{self.page_id}/scheduled_posts"
+        params = {"fields": "scheduled_publish_time", "limit": 100, "access_token": self.access_token}
         try:
-            resp = requests.post(url, data=payload, timeout=20)
-            data = resp.json()
-            if resp.status_code == 200 and "id" in data:
-                print(f"[Meta] Visibility test succeeded! Post ID: {data['id']}")
-                return {"success": True, "post_id": data["id"]}
-            else:
-                print(f"[Meta] Visibility test failed: {data}")
-                return {"success": False, "error": data}
+            while url:
+                data = requests.get(url, params=params, timeout=20).json()
+                if "error" in data:
+                    print(f"[Meta] Could not read scheduled posts: {data['error'].get('message')}")
+                    break
+                out += [int(p["scheduled_publish_time"]) for p in data.get("data", []) if p.get("scheduled_publish_time")]
+                url, params = data.get("paging", {}).get("next"), None
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            print(f"[Meta] Error reading scheduled posts: {e}")
+        return out
 
-    def calculate_next_slot(self, existing_schedules: List[datetime]) -> int:
-        """
-        Calculates a scheduled unix timestamp in peak US/UK windows (12:00-23:00 UTC).
-        Must be at least 15 minutes in the future and at least 2.5 hours after previous post.
-        """
-        now = datetime.now(timezone.utc)
-        windows = CONFIG.get("meta", {}).get("daily_posting_windows_utc", [
-            {"start": 12, "end": 14},
-            {"start": 16, "end": 18},
-            {"start": 20, "end": 22}
-        ])
-        
-        # Start looking from tomorrow or later today
-        candidate_days = [now.date() + timedelta(days=d) for d in range(1, 8)]
-        
-        for day in candidate_days:
-            for w in windows:
-                rand_minute = random.randint(5, 50)
-                rand_second = random.randint(0, 59)
-                slot_time = datetime(
-                    day.year, day.month, day.day,
-                    w["start"], rand_minute, rand_second,
-                    tzinfo=timezone.utc
-                )
-                
-                # Check conflict with existing schedules
-                conflict = False
-                for ex in existing_schedules:
-                    diff_hours = abs((slot_time - ex).total_seconds()) / 3600.0
-                    if diff_hours < 2.5:
-                        conflict = True
-                        break
-                        
-                if not conflict:
-                    existing_schedules.append(slot_time)
-                    return int(slot_time.timestamp())
-                    
-        # Fallback to tomorrow + 24 hours
-        fallback = now + timedelta(days=1, hours=random.randint(12, 20))
-        return int(fallback.timestamp())
-
-    def schedule_post(self, post: Dict[str, Any], scheduled_timestamp: int) -> Optional[str]:
-        """
-        Schedules a single approved post on Meta Facebook Graph API.
-        """
+    def test_visibility_post(self, message: str = "Test post from Sincerely Yours.") -> Dict[str, Any]:
+        """Publishes one immediate public text post to check token permissions."""
         if not self.is_configured():
-            print("[Meta] Missing credentials. Simulating post schedule in dry-run mode.")
-            simulated_id = f"simulated_fb_{post['post_id']}"
-            update_post_status(post["post_id"], "scheduled", fb_post_id=simulated_id)
-            return simulated_id
+            return {"success": False, "error": "META_PAGE_ID or META_PAGE_ACCESS_TOKEN missing"}
+        resp = requests.post(f"{GRAPH_BASE_URL}/{self.page_id}/feed",
+                             data={"message": message, "access_token": self.access_token}, timeout=20)
+        data = resp.json()
+        print(f"[Meta] Test post result: {data}")
+        return {"success": "id" in data, "result": data}
 
-        caption = post.get("full_caption", "")
-        card_image_path = post.get("card_image_path")
-        
-        try:
-            if card_image_path and os.path.exists(card_image_path):
-                # Photo post schedule
-                url = f"{GRAPH_BASE_URL}/{self.page_id}/photos"
-                with open(card_image_path, "rb") as f:
-                    payload = {
-                        "caption": caption,
-                        "published": "false",
-                        "scheduled_publish_time": scheduled_timestamp,
-                        "access_token": self.access_token
-                    }
-                    resp = requests.post(url, data=payload, files={"source": f}, timeout=30)
-            else:
-                # Feed post schedule
-                url = f"{GRAPH_BASE_URL}/{self.page_id}/feed"
-                payload = {
-                    "message": caption,
-                    "published": "false",
-                    "scheduled_publish_time": scheduled_timestamp,
-                    "access_token": self.access_token
-                }
-                resp = requests.post(url, data=payload, timeout=20)
-
-            data = resp.json()
-            if resp.status_code == 200 and ("id" in data or "post_id" in data):
-                fb_id = data.get("post_id") or data.get("id")
-                print(f"[Meta] Post {post['post_id']} successfully scheduled! FB ID: {fb_id}")
-                update_post_status(post["post_id"], "scheduled", fb_post_id=fb_id)
-                return fb_id
-            else:
-                print(f"[Meta] Scheduling error from Facebook: {data}")
-                return None
-        except Exception as e:
-            print(f"[Meta] Network error scheduling post: {e}")
+    def schedule_post(self, post: Dict[str, Any], ts: int) -> Optional[str]:
+        if not self.is_configured():
+            print("[Meta] Missing credentials; not scheduling.")
             return None
 
+        caption = post.get("full_caption", "")
+        card = resolve_path(post.get("card_image_path") or "")
+        common = {"published": "false", "scheduled_publish_time": ts, "access_token": self.access_token}
+        try:
+            try:
+                f = open(card, "rb") if card else None
+            except OSError:
+                f = None
+            if f:
+                with f:
+                    resp = requests.post(f"{GRAPH_BASE_URL}/{self.page_id}/photos",
+                                         data={**common, "caption": caption}, files={"source": f}, timeout=60)
+            else:
+                print(f"[Meta] Card image not found for {post['post_id']}; posting text only.")
+                resp = requests.post(f"{GRAPH_BASE_URL}/{self.page_id}/feed",
+                                     data={**common, "message": caption}, timeout=30)
+            data = resp.json()
+        except Exception as e:
+            print(f"[Meta] Network error scheduling {post['post_id']}: {e}")
+            return None
+
+        fb_id = data.get("post_id") or data.get("id")
+        if resp.status_code == 200 and fb_id:
+            when = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+            print(f"[Meta] Scheduled {post['post_id']} for {when} (FB ID {fb_id})")
+            update_post_status(post["post_id"], "scheduled", fb_post_id=fb_id, scheduled_publish_time=ts)
+            return fb_id
+        print(f"[Meta] Facebook rejected {post['post_id']}: {data}")
+        return None
+
     def run_scheduling_job(self) -> int:
-        """Processes all approved, unscheduled posts."""
         posts = get_approved_unscheduled_posts()
         if not posts:
-            print("[Scheduler] No approved posts waiting to be scheduled.")
+            print("[Scheduler] No approved posts waiting.")
             return 0
 
-        scheduled_count = 0
-        existing_slots = []
-        last_format = ""
+        now_ts = int(datetime.now(timezone.utc).timestamp())
+        taken = sorted(set(get_scheduled_publish_times() + self.fetch_facebook_scheduled_times()))
+        print(f"[Scheduler] {len([t for t in taken if t > now_ts])} posts already queued on Facebook.")
 
+        count = 0
         for p in posts:
-            # Avoid two of same format back to back
-            if p["format"] == last_format and len(posts) > 1:
-                continue
-                
-            slot_ts = self.calculate_next_slot(existing_slots)
-            fb_id = self.schedule_post(p, slot_ts)
-            if fb_id:
-                scheduled_count += 1
-                last_format = p["format"]
-
-        return scheduled_count
+            ts = pick_slot(taken)
+            if ts is None:
+                print("[Scheduler] Posting calendar is full for the lookahead window; remaining posts wait for the next run.")
+                break
+            if self.schedule_post(p, ts):
+                taken.append(ts)
+                count += 1
+        return count

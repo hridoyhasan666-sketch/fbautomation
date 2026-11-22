@@ -1,91 +1,35 @@
-# Archive Micro-Story Facebook Automation Engine
+# Sincerely Yours — Facebook Content Engine
 
-An autonomous, self-improving content engine for the Facebook Page **"Old news, modern life"**.
-Built strictly around authentic public-domain archive clippings (pre-1930 Chronicling America / Library of Congress), verified with code gates and citation matching, curated via a judge tournament, and approved directly from your phone via Telegram.
+Automated posting for the Facebook Page **Sincerely Yours** ("Old news, modern life"):
+original posts comparing how people lived ~100 years ago with how we live now.
 
----
+## Daily flow (GitHub Actions)
 
-## Architecture Overview
+| When (UTC) | Workflow | What it does |
+|---|---|---|
+| 02:00 daily | `generate.yml` | Writes 3 posts (3 drafts each → quality gates → AI judge → polish → card image), sends each to Telegram |
+| every 2h (:15) | `schedule.yml` | Applies your Approve/Reject taps, schedules approved posts on Facebook |
+| Sun 18:00 | `learn.yml` | Pulls engagement, shifts format mix toward what performs |
 
-```
-Archive Records (LoC / Curated) 
-       │
-       ▼
-1. HARVEST (Seed Cards, Keywords, Price/Ad/Advice/Incident)
-       │
-       ▼
-2. DRAFT (Gemini generates 3 candidates x 5 hooks, structured claims)
-       │
-       ▼
-3. GATES (Word count, Banned AI words, Exclamation limits, Cosine similarity, Citation match >= 90%)
-       │
-       ▼
-4. JUDGE TOURNAMENT (Gemini Judge scores 1-10; Winner polished with Section 5 rules)
-       │
-       ▼
-5. RENDER (1080x1350 High-res Portrait Cards via Pillow + Typography + CPI Badges)
-       │
-       ▼
-6. TELEGRAM APPROVAL (Delivered to phone: [Approve] [Rewrite] [Reject])
-       │
-       ▼
-7. META SCHEDULER (Scheduled via Graph API in peak US/UK engagement windows)
-       │
-       ▼
-8. LEARNING LOOP (Thompson Sampling on Beta(wins, losses); Format shares dynamically reweighted)
-```
+Scheduling rules (`config.yaml → meta`): max **3 posts/day**, one per window
+(12–15, 16–19, 20–23 UTC), random minute, at least 2.5h apart. Slots already taken are read from
+both the database and Facebook's own scheduled-post list, so posts never stack.
 
----
+## Formats (`formats/`)
+`then_vs_now`, `forgotten_habit`, `old_wisdom`, `life_question`, `short_story` (labelled fiction).
+Topics live in `config.yaml → pillars`; add your own there.
 
-## Quick Start Guide
+Each caption = hook + body + 3–5 topical hashtags + brand hashtags. No links.
 
-### 1. Configure Environment
-Create a `.env` file in the project root (see `.env.example`):
-```env
-# 1. Gemini API Key
-GEMINI_API_KEY=your_key_here
-
-# 2. Meta Facebook Graph API
-META_PAGE_ID=your_page_id_here
-META_PAGE_ACCESS_TOKEN=your_never_expiring_system_user_page_token
-
-# 3. Telegram Approval Bot
-TELEGRAM_BOT_TOKEN=your_botfather_token
-TELEGRAM_ADMIN_CHAT_ID=your_numeric_telegram_user_id
-```
-
-### 2. Check System Health
+## Local commands
 ```bash
-python main.py health
-```
-
-### 3. Generate Posts & Cards
-```bash
-# Generate 1 post for each of the 6 formats:
-python main.py generate
-
-# Or generate for a specific format:
-python main.py generate --format price
-python main.py generate --format true_retelling
-python main.py generate --format advice
-```
-
-### 4. Deliver to Telegram for Phone Approval
-```bash
-python main.py deliver
-```
-Or start the interactive Telegram bot listener:
-```bash
-python main.py bot
-```
-
-### 5. Schedule Approved Posts on Facebook
-```bash
+python main.py health            # status + upcoming posts
+python main.py generate --count 3
+python main.py deliver           # send new posts to Telegram
+python main.py poll              # apply Approve/Reject taps once
 python main.py schedule
+python main.py bot               # continuous Telegram listener (optional)
 ```
 
-### 6. Sync Insights & Run Learning Loop (Sundays)
-```bash
-python main.py metrics
-python main.py learn
-```
+## Secrets (GitHub → Settings → Secrets → Actions)
+`GEMINI_API_KEY`, `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`
