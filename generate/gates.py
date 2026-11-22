@@ -147,8 +147,8 @@ class GateChecker:
         if not valid_hooks:
             return False, "[Hook] All hooks failed length/style/repeat checks"
 
-        first_line = body.split("\n", 1)[0].strip().lower()
-        valid_hooks = [h for h in valid_hooks if compute_text_similarity(h, first_line) < 0.85]
+        first_sentence = re.split(r"(?<=[.!?])\s+|\n", body.strip(), maxsplit=1)[0].strip().lower()
+        valid_hooks = [h for h in valid_hooks if compute_text_similarity(h, first_sentence) < 0.75]
         if not valid_hooks:
             return False, "[Hook] Body repeats the hook"
 

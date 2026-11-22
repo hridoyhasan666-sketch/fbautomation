@@ -13,7 +13,7 @@ brand:
 
 caption:
   # Tags always appended after the topical ones the model picks.
-  brand_hashtags: ["#SincerelyYours", "#OldNewsModernLife"]
+  brand_hashtags: ["#SincerelyYours"]
   min_topic_hashtags: 3
   max_topic_hashtags: 5
 
