@@ -118,6 +118,11 @@ class TelegramApprovalBot:
         except Exception as e:
             print(f"[Bot] getUpdates error: {e}")
             return offset
+        if not resp.get("ok"):
+            print(f"[Bot] getUpdates failed: {resp.get('error_code')} {resp.get('description')}")
+            return offset
+        if resp.get("result"):
+            print(f"[Bot] Received {len(resp['result'])} update(s).")
         for u in resp.get("result", []):
             offset = u["update_id"] + 1
             if "callback_query" in u:
@@ -128,6 +133,13 @@ class TelegramApprovalBot:
         if not self.is_configured():
             print("[Bot] Telegram not configured.")
             return
+        me = self._api("getMe").get("result", {})
+        hook = self._api("getWebhookInfo").get("result", {})
+        print(f"[Bot] Polling as @{me.get('username')}; webhook={'set' if hook.get('url') else 'none'}; "
+              f"pending={hook.get('pending_update_count')}")
+        if hook.get("url"):
+            # A webhook blocks getUpdates entirely; drop it so button presses reach us.
+            print(f"[Bot] Removing webhook so polling works: {self._api('deleteWebhook')}")
         offset = self.process_updates_once()
         # Confirm processed updates so Telegram doesn't resend them next time.
         if offset:
