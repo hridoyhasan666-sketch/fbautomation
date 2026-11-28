@@ -8,7 +8,8 @@ original posts comparing how people lived ~100 years ago with how we live now.
 | When (UTC) | Workflow | What it does |
 |---|---|---|
 | 02:00 daily | `generate.yml` | Writes 3 posts (3 drafts each → quality gates → AI judge → polish → card image), sends each to Telegram |
-| every 10 min | `schedule.yml` | Applies your Approve/Reject taps, schedules approved posts on Facebook |
+| on tap (instant) | `approve.yml` | Cloudflare Worker (`worker/`) answers the button, then this saves the decision and schedules on Facebook (~1 min) |
+| ~hourly | `schedule.yml` | Backup: schedules any approved post still waiting (and reads taps if the worker is off) |
 | Sun 18:00 | `learn.yml` | Pulls engagement, shifts format mix toward what performs |
 
 Scheduling rules (`config.yaml → meta`): max **3 posts/day**, one per window
@@ -33,3 +34,9 @@ python main.py bot               # continuous Telegram listener (optional)
 
 ## Secrets (GitHub → Settings → Secrets → Actions)
 `GEMINI_API_KEY`, `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_CHAT_ID`
+
+## Instant Telegram buttons (`worker/`)
+A free Cloudflare Worker receives button taps through a Telegram webhook, answers in under a second,
+and triggers `approve.yml` through GitHub `repository_dispatch`. Worker secrets: `TELEGRAM_BOT_TOKEN`,
+`TELEGRAM_ADMIN_CHAT_ID`, `WEBHOOK_SECRET`, `GITHUB_TOKEN` (fine-grained, this repo only, Contents: read & write).
+To go back to hourly polling: call Telegram `deleteWebhook`.

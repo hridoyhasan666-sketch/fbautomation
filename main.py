@@ -21,6 +21,9 @@ def main():
     p_gen.add_argument("--format", type=str, default="", help="Force a format (e.g. then_vs_now)")
     sub.add_parser("deliver", help="Send new posts to Telegram for approval")
     sub.add_parser("poll", help="Process Telegram Approve/Reject presses once and exit")
+    p_apply = sub.add_parser("apply", help="Apply one Approve/Reject tap (used by the webhook worker)")
+    p_apply.add_argument("action", choices=["approve", "reject", "rewrite"])
+    p_apply.add_argument("post_id")
     sub.add_parser("bot", help="Run the Telegram approval listener continuously")
     sub.add_parser("schedule", help="Schedule approved posts on Facebook at random daily slots")
     sub.add_parser("metrics", help="Pull engagement for published posts")
@@ -46,6 +49,25 @@ def main():
     elif args.command == "poll":
         from bot.telegram_bot import TelegramApprovalBot
         TelegramApprovalBot().poll_once()
+
+    elif args.command == "apply":
+        from bot.telegram_bot import TelegramApprovalBot
+        TelegramApprovalBot().apply_decision(args.action, args.post_id)
+        if args.action == "approve":
+            from publish.schedule import MetaPublisher
+            from db.database import get_connection
+            MetaPublisher().run_scheduling_job()
+            with get_connection() as conn:
+                row = conn.execute("SELECT status, scheduled_publish_time FROM posts WHERE post_id = ?",
+                                   (args.post_id,)).fetchone()
+            if row and row["status"] == "scheduled" and row["scheduled_publish_time"]:
+                from datetime import datetime, timezone
+                when = datetime.fromtimestamp(int(row["scheduled_publish_time"]), timezone.utc)
+                TelegramApprovalBot().notify(
+                    f"📅 {args.post_id} is scheduled on Facebook for {when:%a %d %b, %H:%M} UTC.")
+            elif row and row["status"] == "approved":
+                TelegramApprovalBot().notify(
+                    f"{args.post_id}: approved, but no free slot yet - it will be scheduled automatically.")
 
     elif args.command == "bot":
         from bot.telegram_bot import TelegramApprovalBot

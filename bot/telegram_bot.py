@@ -49,7 +49,7 @@ class TelegramApprovalBot:
 
         text = (f"{html.escape(post.get('full_caption', ''))}\n\n"
                 f"<i>{html.escape(post['format'])} · {html.escape(post.get('pillar', ''))}</i>\n"
-                f"<i>Tap once. Your choice is applied within ~10 minutes and this message will show STATUS.</i>\n"
+                f"<i>Tap once - it is applied instantly and you will get the Facebook time in ~1 minute.</i>\n"
                 f"<code>{post_id}</code>")
         res = self._api("sendMessage", json={
             "chat_id": self.admin_chat_id,
@@ -138,12 +138,36 @@ class TelegramApprovalBot:
         print(f"[Bot] Polling as @{me.get('username')}; webhook={'set' if hook.get('url') else 'none'}; "
               f"pending={hook.get('pending_update_count')}")
         if hook.get("url"):
-            # A webhook blocks getUpdates entirely; drop it so button presses reach us.
-            print(f"[Bot] Removing webhook so polling works: {self._api('deleteWebhook')}")
+            # The Cloudflare Worker (worker/) receives taps instantly and triggers approve.yml.
+            print("[Bot] Webhook active - taps are handled instantly by the worker; skipping poll.")
+            return
         offset = self.process_updates_once()
         # Confirm processed updates so Telegram doesn't resend them next time.
         if offset:
             self.process_updates_once(offset)
+
+    def notify(self, text: str) -> None:
+        if self.is_configured():
+            self._api("sendMessage", json={"chat_id": self.admin_chat_id, "text": text[:4096]})
+
+    def apply_decision(self, action: str, post_id: str) -> None:
+        """Called by approve.yml after the Cloudflare Worker has already acknowledged the tap."""
+        current = get_post_status(post_id)
+        if current is None:
+            msg = f"{post_id}: post not found."
+        elif current != "pending_approval":
+            msg = f"{post_id}: already {current}, nothing changed."
+        elif action == "approve":
+            update_post_status(post_id, "approved")
+            msg = ""
+        elif action in ("reject", "rewrite"):
+            update_post_status(post_id, "rejected")
+            msg = f"{post_id}: rejected."
+        else:
+            msg = f"{post_id}: unknown action '{action}'."
+        print(f"[Bot] apply {action} {post_id} (was {current}) {msg}")
+        if msg:
+            self.notify(msg)
 
     def run_polling(self):
         if not self.is_configured():

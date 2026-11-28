@@ -1,0 +1,6 @@
+name = "telegram-approvals"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+GITHUB_REPO = "hridoyhasan666-sketch/fbautomation"

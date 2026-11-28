@@ -1,0 +1,53 @@
+name: Apply Telegram Tap (instant, via webhook worker)
+
+on:
+  repository_dispatch:
+    types: [telegram-tap]
+
+permissions:
+  contents: write
+
+# Shares the DB lock with the other workflows; queued taps run one after another.
+concurrency:
+  group: fb-engine-db
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply tap and schedule on Facebook
+        env:
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+          ACTION: ${{ github.event.client_payload.action }}
+          POST_ID: ${{ github.event.client_payload.post_id }}
+        run: |
+          [[ "$ACTION" =~ ^(approve|reject|rewrite)$ ]] || { echo "bad action"; exit 1; }
+          [[ "$POST_ID" =~ ^post-[A-Za-z0-9]+$ ]] || { echo "bad post id"; exit 1; }
+          python main.py apply "$ACTION" "$POST_ID"
+
+      - name: Commit and push database
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Apply Telegram tap [skip ci]"
+          git pull --rebase -q && git push
