@@ -31,7 +31,10 @@ FORMAT_KICKERS = {
     "old_wisdom": "OLD WISDOM",
     "life_question": "WHAT WOULD YOU CHOOSE?",
     "short_story": "A SHORT STORY",
+    "guess_quote": "GUESS THE QUOTE",
 }
+
+QUOTE_KICKERS = {"writer": "GUESS THE WRITER", "book": "GUESS THE BOOK"}
 
 def get_font(paths: list, size: int):
     for p in paths:
@@ -114,4 +117,42 @@ class CardRenderer:
         img.save(os.path.join(self.output_dir, filename), "PNG")
         rel = os.path.relpath(os.path.join(self.output_dir, filename), BASE_DIR).replace(os.sep, "/")
         print(f"[Renderer] Saved card: {rel}")
+        return rel
+
+    def render_quote_card(self, quote: str, ask: str, post_id: str) -> str:
+        """Quote card: big centred quote and no author, because the caption asks readers to guess."""
+        width, height = 1080, 1350
+        img = Image.new("RGB", (width, height), color=(24, 23, 22))
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([(30, 30), (width - 30, height - 30)], outline=(60, 56, 52), width=2)
+        draw.rectangle([(38, 38), (width - 38, height - 38)], outline=(110, 102, 92), width=1)
+        gold, paper, muted, rule = (210, 185, 140), (245, 240, 230), (160, 145, 125), (120, 105, 80)
+
+        def centred(y, text, font, fill):
+            draw.text(((width - draw.textlength(text, font=font)) / 2, y), text, font=font, fill=fill)
+
+        centred(100, QUOTE_KICKERS.get(ask, "GUESS THE QUOTE"), get_font(BOLD_SERIF_FONTS, 30), gold)
+        draw.line([(80, 150), (1000, 150)], fill=rule, width=2)
+        text = quote.strip()
+        for size in (72, 64, 58, 52, 46, 40):
+            font = get_font(SERIF_FONTS, size)
+            lines = wrap_text(text, font, max_width=880, draw=draw)
+            line_h = int(size * 1.4)
+            if len(lines) * line_h <= 740:
+                break
+        start_y = 350 + (740 - len(lines) * line_h) // 2
+        centred(max(170, start_y - 175), "“", get_font(BOLD_SERIF_FONTS, 150), rule)
+        for i, line in enumerate(lines):
+            centred(start_y + i * line_h, line, font, paper)
+
+        centred(1115, "— ?", get_font(BOLD_SERIF_FONTS, 54), gold)
+        draw.line([(80, 1220), (1000, 1220)], fill=rule, width=1)
+        brand = CONFIG.get("brand", {})
+        centred(1245, f"{brand.get('page_name', '')}  ·  {brand.get('tagline', '')}".upper(),
+                get_font(SERIF_FONTS, 24), muted)
+
+        filename = f"card_{post_id}.png"
+        img.save(os.path.join(self.output_dir, filename), "PNG")
+        rel = os.path.relpath(os.path.join(self.output_dir, filename), BASE_DIR).replace(os.sep, "/")
+        print(f"[Renderer] Saved quote card: {rel}")
         return rel

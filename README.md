@@ -16,7 +16,14 @@ Scheduling rules (`config.yaml → meta`): max **3 posts/day**, one per window
 (12–15, 16–19, 20–23 UTC), random minute, at least 2.5h apart. Slots already taken are read from
 both the database and Facebook's own scheduled-post list, so posts never stack.
 
-## Formats (`formats/`)
+## Current content: guess-the-quote photocards
+Each post is a card with a public-domain quote (no author shown) and a short caption:
+"Can you guess the writer?" or "Which book is this from?" plus hashtags. The answer appears only in
+your Telegram approval message. Quotes live in `data/quotes.yaml` (add your own there); each is used
+once before any repeats. Hashtags: `config.yaml -> quotes`. To bring back the older written formats,
+edit `generation.enabled_formats` in `config.yaml`.
+
+## Older formats (`formats/`)
 `then_vs_now`, `forgotten_habit`, `old_wisdom`, `life_question`, `short_story` (labelled fiction).
 Topics live in `config.yaml → pillars`; add your own there.
 

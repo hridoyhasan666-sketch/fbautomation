@@ -1,0 +1,332 @@
+# Quote library for the "guess_quote" format.
+# Rules: public-domain authors only, every line checked against the original book (Project Gutenberg),
+# no popular misattributions. Translations used are public-domain ones (named in `note`).
+# ask: "writer" -> caption asks who wrote it; "book" -> asks which book it's from; omit = random.
+# Add your own at the bottom; `id` must be unique.
+
+quotes:
+  - id: austen-pp-truth
+    text: "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife."
+    author: Jane Austen
+    book: Pride and Prejudice
+    year: 1813
+    ask: book
+  - id: austen-pp-reading
+    text: "I declare after all there is no enjoyment like reading!"
+    author: Jane Austen
+    book: Pride and Prejudice
+    year: 1813
+  - id: austen-emma-half
+    text: "One half of the world cannot understand the pleasures of the other."
+    author: Jane Austen
+    book: Emma
+    year: 1815
+  - id: austen-northanger-novel
+    text: "The person, be it gentleman or lady, who has not pleasure in a good novel, must be intolerably stupid."
+    author: Jane Austen
+    book: Northanger Abbey
+    year: 1817
+  - id: austen-persuasion-pierce
+    text: "You pierce my soul. I am half agony, half hope."
+    author: Jane Austen
+    book: Persuasion
+    year: 1817
+  - id: tolstoy-anna-families
+    text: "Happy families are all alike; every unhappy family is unhappy in its own way."
+    author: Leo Tolstoy
+    book: Anna Karenina
+    year: 1878
+    note: Constance Garnett translation
+  - id: tolstoy-war-patience
+    text: "The strongest of all warriors are these two — Time and Patience."
+    author: Leo Tolstoy
+    book: War and Peace
+    year: 1869
+    note: Louise and Aylmer Maude translation
+  - id: dickens-tale-best
+    text: "It was the best of times, it was the worst of times."
+    author: Charles Dickens
+    book: A Tale of Two Cities
+    year: 1859
+    ask: book
+  - id: dickens-tale-farfar
+    text: "It is a far, far better thing that I do, than I have ever done; it is a far, far better rest that I go to than I have ever known."
+    author: Charles Dickens
+    book: A Tale of Two Cities
+    year: 1859
+  - id: dickens-oliver-more
+    text: "Please, sir, I want some more."
+    author: Charles Dickens
+    book: Oliver Twist
+    year: 1838
+    ask: book
+  - id: dickens-expectations-evidence
+    text: "Take nothing on its looks; take everything on evidence. There's no better rule."
+    author: Charles Dickens
+    book: Great Expectations
+    year: 1861
+  - id: dickens-carol-honour
+    text: "I will honour Christmas in my heart, and try to keep it all the year."
+    author: Charles Dickens
+    book: A Christmas Carol
+    year: 1843
+  - id: thoreau-walden-desperation
+    text: "The mass of men lead lives of quiet desperation."
+    author: Henry David Thoreau
+    book: Walden
+    year: 1854
+  - id: thoreau-walden-woods
+    text: "I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach."
+    author: Henry David Thoreau
+    book: Walden
+    year: 1854
+  - id: thoreau-walden-simplify
+    text: "Our life is frittered away by detail. Simplify, simplify."
+    author: Henry David Thoreau
+    book: Walden
+    year: 1854
+  - id: thoreau-walden-truth
+    text: "Rather than love, than money, than fame, give me truth."
+    author: Henry David Thoreau
+    book: Walden
+    year: 1854
+  - id: ebronte-wuthering-souls
+    text: "Whatever our souls are made of, his and mine are the same."
+    author: Emily Brontë
+    book: Wuthering Heights
+    year: 1847
+  - id: cbronte-jane-bird
+    text: "I am no bird; and no net ensnares me: I am a free human being with an independent will."
+    author: Charlotte Brontë
+    book: Jane Eyre
+    year: 1847
+  - id: cbronte-jane-animosity
+    text: "Life appears to me too short to be spent in nursing animosity or registering wrongs."
+    author: Charlotte Brontë
+    book: Jane Eyre
+    year: 1847
+  - id: cbronte-jane-married
+    text: "Reader, I married him."
+    author: Charlotte Brontë
+    book: Jane Eyre
+    year: 1847
+    ask: book
+  - id: fitzgerald-gatsby-boats
+    text: "So we beat on, boats against the current, borne back ceaselessly into the past."
+    author: F. Scott Fitzgerald
+    book: The Great Gatsby
+    year: 1925
+  - id: melville-moby-ishmael
+    text: "Call me Ishmael."
+    author: Herman Melville
+    book: Moby-Dick
+    year: 1851
+    ask: book
+  - id: melville-moby-cannibal
+    text: "Better sleep with a sober cannibal than a drunken Christian."
+    author: Herman Melville
+    book: Moby-Dick
+    year: 1851
+  - id: wilde-dorian-temptation
+    text: "The only way to get rid of a temptation is to yield to it."
+    author: Oscar Wilde
+    book: The Picture of Dorian Gray
+    year: 1890
+    ask: writer
+  - id: wilde-dorian-talked
+    text: "There is only one thing in the world worse than being talked about, and that is not being talked about."
+    author: Oscar Wilde
+    book: The Picture of Dorian Gray
+    year: 1890
+    ask: writer
+  - id: wilde-dorian-define
+    text: "To define is to limit."
+    author: Oscar Wilde
+    book: The Picture of Dorian Gray
+    year: 1890
+    ask: writer
+  - id: wilde-windermere-stars
+    text: "We are all in the gutter, but some of us are looking at the stars."
+    author: Oscar Wilde
+    book: Lady Windermere's Fan
+    year: 1892
+    ask: writer
+  - id: wilde-windermere-experience
+    text: "Experience is the name every one gives to their mistakes."
+    author: Oscar Wilde
+    book: Lady Windermere's Fan
+    year: 1892
+    ask: writer
+  - id: wilde-earnest-truth
+    text: "The truth is rarely pure and never simple."
+    author: Oscar Wilde
+    book: The Importance of Being Earnest
+    year: 1895
+    ask: writer
+  - id: shelley-frank-fearless
+    text: "Beware; for I am fearless, and therefore powerful."
+    author: Mary Shelley
+    book: Frankenstein
+    year: 1818
+  - id: shelley-frank-change
+    text: "Nothing is so painful to the human mind as a great and sudden change."
+    author: Mary Shelley
+    book: Frankenstein
+    year: 1818
+  - id: stoker-dracula-night
+    text: "Listen to them, the children of the night. What music they make!"
+    author: Bram Stoker
+    book: Dracula
+    year: 1897
+    ask: book
+  - id: twain-huck-hell
+    text: "All right, then, I'll go to hell."
+    author: Mark Twain
+    book: Adventures of Huckleberry Finn
+    year: 1884
+  - id: aurelius-meditations-happy
+    text: "Very little is needed to make a happy life."
+    author: Marcus Aurelius
+    book: Meditations
+    year: 180
+    note: George Long translation
+    ask: writer
+  - id: aurelius-meditations-change
+    text: "The universe is change; our life is what our thoughts make it."
+    author: Marcus Aurelius
+    book: Meditations
+    year: 180
+    note: George Long translation
+    ask: writer
+  - id: aurelius-meditations-goodman
+    text: "No longer talk at all about the kind of man that a good man ought to be, but be such."
+    author: Marcus Aurelius
+    book: Meditations
+    year: 180
+    note: George Long translation
+    ask: writer
+  - id: seneca-letters-time
+    text: "Nothing, Lucilius, is ours, except time."
+    author: Seneca
+    book: Letters from a Stoic (Moral Letters to Lucilius)
+    year: 65
+    note: Richard M. Gummere translation, 1917
+    ask: writer
+  - id: emerson-selfreliance-great
+    text: "To be great is to be misunderstood."
+    author: Ralph Waldo Emerson
+    book: Self-Reliance
+    year: 1841
+    ask: writer
+  - id: emerson-selfreliance-hobgoblin
+    text: "A foolish consistency is the hobgoblin of little minds."
+    author: Ralph Waldo Emerson
+    book: Self-Reliance
+    year: 1841
+    ask: writer
+  - id: emerson-selfreliance-trust
+    text: "Trust thyself: every heart vibrates to that iron string."
+    author: Ralph Waldo Emerson
+    book: Self-Reliance
+    year: 1841
+    ask: writer
+  - id: shakespeare-hamlet-true
+    text: "This above all: to thine own self be true."
+    author: William Shakespeare
+    book: Hamlet
+    year: 1603
+    ask: book
+  - id: shakespeare-hamlet-brevity
+    text: "Brevity is the soul of wit."
+    author: William Shakespeare
+    book: Hamlet
+    year: 1603
+    ask: writer
+  - id: shakespeare-asyoulike-stage
+    text: "All the world's a stage, and all the men and women merely players."
+    author: William Shakespeare
+    book: As You Like It
+    year: 1623
+    ask: book
+  - id: eliot-middlemarch-live
+    text: "What do we live for, if it is not to make life less difficult to each other?"
+    author: George Eliot
+    book: Middlemarch
+    year: 1871
+  - id: alcott-littlewomen-storms
+    text: "I'm not afraid of storms, for I'm learning how to sail my ship."
+    author: Louisa May Alcott
+    book: Little Women
+    year: 1868
+  - id: alcott-littlewomen-presents
+    text: "Christmas won't be Christmas without any presents."
+    author: Louisa May Alcott
+    book: Little Women
+    year: 1868
+    ask: book
+  - id: carroll-alice-curiouser
+    text: "Curiouser and curiouser!"
+    author: Lewis Carroll
+    book: Alice's Adventures in Wonderland
+    year: 1865
+    ask: book
+  - id: carroll-alice-yesterday
+    text: "It's no use going back to yesterday, because I was a different person then."
+    author: Lewis Carroll
+    book: Alice's Adventures in Wonderland
+    year: 1865
+  - id: carroll-looking-impossible
+    text: "Why, sometimes I've believed as many as six impossible things before breakfast."
+    author: Lewis Carroll
+    book: Through the Looking-Glass
+    year: 1871
+  - id: montgomery-anne-tomorrow
+    text: "Isn't it nice to think that tomorrow is a new day with no mistakes in it yet?"
+    author: L. M. Montgomery
+    book: Anne of Green Gables
+    year: 1908
+  - id: burnett-garden-world
+    text: "If you look the right way, you can see that the whole world is a garden."
+    author: Frances Hodgson Burnett
+    book: The Secret Garden
+    year: 1911
+  - id: dostoevsky-crime-pain
+    text: "Pain and suffering are always inevitable for a large intelligence and a deep heart."
+    author: Fyodor Dostoevsky
+    book: Crime and Punishment
+    year: 1866
+    note: Constance Garnett translation
+  - id: grahame-willows-boats
+    text: "There is nothing — absolutely nothing — half so much worth doing as simply messing about in boats."
+    author: Kenneth Grahame
+    book: The Wind in the Willows
+    year: 1908
+  - id: barrie-peter-grow
+    text: "All children, except one, grow up."
+    author: J. M. Barrie
+    book: Peter and Wendy
+    year: 1911
+    ask: book
+  - id: barrie-peter-adventure
+    text: "To die will be an awfully big adventure."
+    author: J. M. Barrie
+    book: Peter and Wendy
+    year: 1911
+    ask: book
+  - id: jerome-boat-work
+    text: "I like work: it fascinates me. I can sit and look at it for hours."
+    author: Jerome K. Jerome
+    book: Three Men in a Boat
+    year: 1889
+  - id: gibran-prophet-children
+    text: "Your children are not your children. They are the sons and daughters of Life's longing for itself."
+    author: Kahlil Gibran
+    book: The Prophet
+    year: 1923
+    ask: writer
+  - id: franklin-almanack-early
+    text: "Early to bed and early to rise, makes a man healthy, wealthy and wise."
+    author: Benjamin Franklin
+    book: Poor Richard's Almanack
+    year: 1735
+    ask: writer

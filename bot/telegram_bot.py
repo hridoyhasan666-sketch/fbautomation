@@ -47,7 +47,9 @@ class TelegramApprovalBot:
         except OSError:
             pass
 
-        text = (f"{html.escape(post.get('full_caption', ''))}\n\n"
+        answer = (f"🔒 <b>Answer (only you see this):</b> {html.escape(post['source_line'])}\n"
+                  if post.get("source_line") else "")
+        text = (f"{html.escape(post.get('full_caption', ''))}\n\n{answer}"
                 f"<i>{html.escape(post['format'])} · {html.escape(post.get('pillar', ''))}</i>\n"
                 f"<i>Tap once - it is applied instantly and you will get the Facebook time in ~1 minute.</i>\n"
                 f"<code>{post_id}</code>")

@@ -35,6 +35,14 @@ generation:
   daily_count: 3
   # Don't reuse a topic that was used in the last N posts
   topic_cooldown_posts: 40
+  # Only these formats are generated. Delete this line (or list more) to bring the old formats back.
+  enabled_formats: ["guess_quote"]
+
+# "Guess the quote" photocards (the quotes live in data/quotes.yaml)
+quotes:
+  hashtags:
+    writer: ["#GuessTheWriter", "#Quotes", "#ClassicLiterature", "#BookLovers", "#BookQuotes"]
+    book: ["#GuessTheBook", "#Quotes", "#ClassicBooks", "#BookLovers", "#BookQuotes"]
 
 pillars:
   money:
@@ -97,6 +105,8 @@ pillars:
       - "fear of missing out, 1900s edition"
 
 formats:
+  guess_quote:
+    initial_weight: 0.30
   then_vs_now:
     initial_weight: 0.30
     min_words: 90

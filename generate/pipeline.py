@@ -22,7 +22,8 @@ class StoryPipeline:
         self.renderer = CardRenderer()
 
     def pick_format(self) -> str:
-        formats = CONFIG["formats"]
+        enabled = CONFIG.get("generation", {}).get("enabled_formats")
+        formats = {f: c for f, c in CONFIG["formats"].items() if not enabled or f in enabled}
         learned = get_bandit_weights()
         weights = [learned.get(f, formats[f].get("initial_weight", 0.1)) for f in formats]
         return random.choices(list(formats), weights=weights, k=1)[0]
@@ -37,6 +38,9 @@ class StoryPipeline:
     def generate_single_slot(self, format_name: Optional[str] = None, max_attempts: int = 3) -> Optional[Dict[str, Any]]:
         for attempt in range(1, max_attempts + 1):
             fmt = format_name or self.pick_format()
+            if fmt == "guess_quote":
+                from generate.quotes import generate_quote_post
+                return generate_quote_post(self.renderer)
             pillar, topic = self.pick_topic()
             print(f"\n[Pipeline] Attempt {attempt}: format={fmt} pillar={pillar} topic='{topic}'")
             post = self._run(fmt, pillar, topic)
